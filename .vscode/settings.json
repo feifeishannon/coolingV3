@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "stdio.h": "c",
+        "modbus.h": "c",
+        "main.h": "c",
+        "stdint.h": "c",
+        "stm32h7xx_hal.h": "c",
+        "sht20.h": "c",
+        "string.h": "c"
+    }
+}
