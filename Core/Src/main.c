@@ -84,7 +84,23 @@ static void MX_TIM15_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+unsigned char *data; 
+unsigned char length; 
+unsigned int crc_chk(unsigned char *data,unsigned char length) { 
+  unsigned char j;
+  unsigned int reg_crc=0xffff; 
+  while(length--){ 
+    reg_crc^=*data++; 
+    for(j=0;j<8;j++){ 
+      if(reg_crc&0x01){ 
+        reg_crc=(reg_crc>>1)^0xa001;
+      } else{ 
+        reg_crc=reg_crc>>1; 
+      } 
+    } 
+  } 
+  return reg_crc; 
+}
 /* USER CODE END 0 */
 
 /**
@@ -132,6 +148,7 @@ int main(void)
   MX_TIM5_Init();
   MX_TIM15_Init();
   /* USER CODE BEGIN 2 */
+
 
   /* USER CODE END 2 */
 
