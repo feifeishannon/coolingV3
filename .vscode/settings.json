@@ -6,6 +6,7 @@
         "stdint.h": "c",
         "stm32h7xx_hal.h": "c",
         "sht20.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "cooling_modbus_protocol.h": "c"
     }
 }
