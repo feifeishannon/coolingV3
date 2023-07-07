@@ -314,7 +314,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>4</Optim>
+            <Optim>1</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -395,6 +395,11 @@
           <GroupName>Application/User/Core</GroupName>
           <Files>
             <File>
+              <FileName>cooling_ModBus_Protocol.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\cooling_ModBus_Protocol.c</FilePath>
+            </File>
+            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/main.c</FilePath>
@@ -408,11 +413,6 @@
               <FileName>stm32h7xx_hal_msp.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/stm32h7xx_hal_msp.c</FilePath>
-            </File>
-            <File>
-              <FileName>cooling_ModBus_Protocol.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\cooling_ModBus_Protocol.c</FilePath>
             </File>
           </Files>
         </Group>

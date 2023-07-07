@@ -367,7 +367,6 @@ static void CoolingModbus_service(){
  */
 static void RxCplt(void)
 {
-	
 	if ((USART_RX_STA & 0x8000) == 0) 
 	{
 		Cooling_Handle->modbus_count = 0;
@@ -376,10 +375,7 @@ static void RxCplt(void)
 		if (USART_RX_STA > (USART_REC_LEN - 1))
 			USART_RX_STA = 0; 
 	}
-
 	HAL_UART_Receive_IT(Cooling_Handle->huart, (uint8_t *)aRxBuffer, 1);
-
-	
 }
 
 

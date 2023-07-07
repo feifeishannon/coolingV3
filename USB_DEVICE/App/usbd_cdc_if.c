@@ -24,6 +24,7 @@
 /* USER CODE BEGIN INCLUDE */
 #include "stdio.h"
 #include <stdarg.h>
+#include <stdint.h>
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -131,7 +132,7 @@ static int8_t CDC_TransmitCplt_HS(uint8_t *pbuf, uint32_t *Len, uint8_t epnum);
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_DECLARATION */
 
-void usb_printf(const char* format, ...) {
+void usb_printfln(const char* format, ...) {
   va_list args;
   uint32_t length;
   va_start(args, format);
@@ -144,6 +145,15 @@ void usb_printf(const char* format, ...) {
   CDC_Transmit_HS(UserTxBufferHS, length+2);
   
 }
+
+// // 重定向标准输出流到USB虚拟串口
+// int _write(int file, char *ptr, int len)
+// {
+//     // 这里使用了HAL库的USB发送函数，你可以根据你的实际情况进行调整
+//     CDC_Transmit_HS((uint8_t*)ptr, len);
+
+//     return len;
+// }
 
 /* USER CODE END PRIVATE_FUNCTIONS_DECLARATION */
 
@@ -298,8 +308,18 @@ static int8_t CDC_Receive_HS(uint8_t* Buf, uint32_t *Len)
     CDC_Transmit_HS(Buf, *Len);
   #endif 
   char str[100];
-  sprintf(str, "%d", Buf);
-  usb_printf("接收到数据:%s",str);
+  char buf[100];
+  int i;
+  int offset = 0;
+  memcpy(buf, Buf, *Len);
+
+  for (i = 0; i < *Len; i++) {
+      offset += sprintf(str + offset, "%02X", buf[i]);
+  }
+  
+  
+  usb_printfln("接收到数据:%s",str);
+  
 
   USBD_CDC_SetRxBuffer(&hUsbDeviceHS, &Buf[0]);
   USBD_CDC_ReceivePacket(&hUsbDeviceHS);

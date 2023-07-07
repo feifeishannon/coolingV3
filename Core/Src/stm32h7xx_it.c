@@ -22,6 +22,7 @@
 #include "stm32h7xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "cooling_ModBus_Protocol.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -59,6 +60,7 @@ extern PCD_HandleTypeDef hpcd_USB_OTG_HS;
 extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim4;
 extern TIM_HandleTypeDef htim5;
+extern TIM_HandleTypeDef htim6;
 extern UART_HandleTypeDef huart7;
 extern UART_HandleTypeDef huart2;
 extern UART_HandleTypeDef huart3;
@@ -189,7 +191,13 @@ void PendSV_Handler(void)
 void SysTick_Handler(void)
 {
   /* USER CODE BEGIN SysTick_IRQn 0 */
-
+  static uint32_t tick_counter = 0;
+  if (tick_counter++ % 1000 == 0 )
+  {
+    HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);
+  }
+  if(Cooling_Handle->modbus_count++>10)Cooling_Handle->modbus_count=10;
+  
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   /* USER CODE BEGIN SysTick_IRQn 1 */
@@ -272,6 +280,25 @@ void TIM5_IRQHandler(void)
   /* USER CODE BEGIN TIM5_IRQn 1 */
 
   /* USER CODE END TIM5_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM6 global interrupt, DAC1_CH1 and DAC1_CH2 underrun error interrupts.
+  */
+void TIM6_DAC_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM6_DAC_IRQn 0 */
+  static uint32_t eventTimer = 0;
+  if ((eventTimer++) % 200 == 0){//20HzÒºÀä¿ØÖÆÆ÷¼à¿Ø
+    Cooling_Handle->Run();
+    Cooling_Handle->UpdataPack();
+    HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_1);
+  }
+  /* USER CODE END TIM6_DAC_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim6);
+  /* USER CODE BEGIN TIM6_DAC_IRQn 1 */
+
+  /* USER CODE END TIM6_DAC_IRQn 1 */
 }
 
 /**

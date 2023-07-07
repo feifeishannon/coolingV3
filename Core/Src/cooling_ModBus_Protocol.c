@@ -11,6 +11,8 @@
  */
 #include "cooling_ModBus_Protocol.h"
 
+#include "usb_device.h"
+
 
 #define USART_REC_LEN 200 
 #define RXBUFFERSIZE 1   
@@ -54,9 +56,10 @@ Cooling_HandleTypeDef* Cooling_Handle;
 // 											// 校验结果是6A21 
 
 
-uint8_t aucCoolingCHECKALLCmd[8]	=	{0x01, 0x03, 0x20, 0x00, 0x00, 0x01, 0x8F, 0xCA};//查询当前温度
+uint8_t aucCoolingGetTemp[8]		=	{0x01, 0x03, 0x20, 0x00, 0x00, 0x01, 0x8F, 0xCA};//查询当前温度
+uint8_t aucCoolingGetState[8]		=	{0x01, 0x03, 0x20, 0x02, 0x00, 0x01, 0x2E, 0x0A};//查询当前状态
 uint8_t aucCoolingOFFCmd[8]			=	{0x01, 0x06, 0x20, 0x31, 0x00, 0x00, 0xD3, 0xC5};//关机指令
-uint8_t aucCoolingONCmd[8]			=	{0x01, 0x06, 0x20, 0x31, 0x00, 0x03, 0x93, 0xC4}; //开机指令
+uint8_t aucCoolingONCmd[8]			=	{0x01, 0x06, 0x20, 0x31, 0x00, 0x03, 0x93, 0xC4};//开机指令
 uint8_t aucCoolingTargTempCmd[8]	=	{0x01, 0x06, 0x20, 0x03, 0x03, 0xE8, 0x72, 0xB4};//设置目标温度为10°
 uint8_t aucCooling06Cmd[8]			=	{0};
 uint8_t aucCooling10Cmd[27]			=	{0};
@@ -170,17 +173,27 @@ static void send_data(uint8_t *buff, uint8_t len)
 	// while (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_TC) != SET); // 等待发送结束
 }
 
+static void send_8data(uint8_t *buff)
+{
+	HAL_UART_Transmit_IT(Cooling_Handle->huart, (uint8_t *)buff, 8); // 发送数据   把buff
+}
+
 static void CoolingOperateSystemON(){
-	send_data(aucCoolingONCmd, 27);
+	send_8data(aucCoolingONCmd);
 }
 
 static void CoolingOperateSystemOFF(){
-	send_data(aucCoolingOFFCmd, 8);
+	send_8data(aucCoolingOFFCmd);
 
 }
 
-static void CoolingOperateGetData(){
-	send_data(aucCoolingCHECKALLCmd, 8);
+static void CoolingOperateGetTemp(){
+	send_8data(aucCoolingGetTemp);
+
+}
+
+static void CoolingOperateGetState(){
+	send_8data(aucCoolingGetTemp);
 
 }
 
@@ -193,7 +206,7 @@ static void CoolingOperateSetTemp(uint8_t value){
 	aucCoolingTargTempCmd[6] = crcCheck / 256;
 	aucCoolingTargTempCmd[7] = crcCheck % 256;
 
-	send_data(aucCoolingTargTempCmd, 8);
+	send_8data(aucCoolingTargTempCmd);
 
 }
 
@@ -214,12 +227,17 @@ static void CoolingOperate(Cooling_OperateTypeDef operateCMD, uint8_t value){
 			
             break;
 
-		case SYSTEM_GET_DATA:
-            CoolingOperateGetData();
+		case SYSTEM_GET_TEMP:
+            CoolingOperateGetTemp();
 
             break;
 
 		case SYSTEM_SET_TEMP_DATA:
+            CoolingOperateSetTemp(value);
+
+            break;
+
+		case SYSTEM_GET_STATE_DATA:
             CoolingOperateSetTemp(value);
 
             break;
@@ -385,7 +403,7 @@ static void CoolingWorkCMD(){
 	CoolingCount++;
 	if(CoolingCount == 1) //	更新频率为20hz时，每0.5秒触发一次
 	{
-		CoolingOperate(SYSTEM_GET_DATA,NULL);
+		CoolingOperate(SYSTEM_GET_TEMP,NULL);
 		
 		if(Cooling_Handle->modbusReport.CoolingRunState == 1)
 		{
@@ -442,7 +460,7 @@ static void CoolingWorkCMD(){
  */
 static Cooling_FunStatusTypeDef Run(){
     static Cooling_StateTypeDef CoolingWorkStatus = Cooling_STOP ;
-	uint8_t BAT_DATA_Pack =0 ;
+	uint8_t BAT_DATA_Pack =1 ;
     if(BAT_DATA_Pack  > 0){
         switch(CoolingWorkStatus){
 			case Cooling_STOP:
@@ -454,7 +472,7 @@ static Cooling_FunStatusTypeDef Run(){
 			case Cooling_GET_STATE:
 			{//读取液冷所有寄存器数值
 				CoolingWorkStatus = Cooling_CHECK;
-				CoolingOperate(SYSTEM_GET_DATA,NULL);
+				CoolingOperate(SYSTEM_GET_STATE_DATA,NULL);
 				break;
 			}
 			case Cooling_CHECK:

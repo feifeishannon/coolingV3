@@ -41,8 +41,9 @@ typedef enum
 {
     SYSTEM_ON               = 0x00,         /*  设置系统开机*/
     SYSTEM_OFF              = 0x01,         /*  设置系统关机*/
-    SYSTEM_GET_DATA         = 0x02,         /*  获取液冷数据*/
-    SYSTEM_SET_TEMP_DATA    = 0x03          /*  设置目标温度*/
+    SYSTEM_GET_TEMP         = 0x02,         /*  获取液冷温度*/
+    SYSTEM_SET_TEMP_DATA    = 0x03,         /*  设置目标温度*/
+    SYSTEM_GET_STATE_DATA   = 0x04          /*  获取液冷状态*/
 } Cooling_OperateTypeDef;                   //功能码定义
 
 #pragma pack(1)
