@@ -370,6 +370,15 @@ static void CoolingWorkCMD(){
 			CoolingWorkStatus = Cooling_STOP;
 		}
 	}
+	else if (CoolingCount == 2){
+		/**@TODO:   
+		 * 1、通过TMS目标温度设定值设置水冷目标温度设定值
+		 * 2、通过水冷当前温度值，控制是否启动制冷
+		 * 3、低于某温度时关闭制冷
+		 * 4、高于某温度时开启制冷
+		 * 5、开关频率要大于10分钟每次
+		 */
+	}
 	
 	else if(CoolingCount >= 3) //更新频率为20hz时，每1.5秒触发一次
 	{

@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file    : cooling_ModBus_Protocol.c
+ * @file    : TMS_ModBus_Protocol.c
  * @brief   : TMS 液冷协议应用程序
  * @version : 1.0.1
  ******************************************************************************
@@ -18,18 +18,18 @@
 
 
 
-uint8_t CoolingRecvBuf[50] = {0};    //接收BUF
-uint8_t CoolingSendBuf[50] = {0};    //发送BUF
-uint8_t CoolingDataBuf[50] = {0};    //水冷数据BUF
+uint8_t TMSRecvBuf[50] = {0};    //接收BUF
+uint8_t TMSSendBuf[50] = {0};    //发送BUF
+uint8_t TMSDataBuf[50] = {0};    //水冷数据BUF
 
-uint8_t CoolingWorkStatus = 0;       //工作状态
-uint8_t CoolingCount = 0;            //计数器
-uint8_t CoolingRecvCount = 0;        //接收计数器
-uint8_t CoolingSendCount = 0;        //发送计数器
-uint8_t CoolingRecvNum = 0;          //接收个数
-uint8_t CoolingSendNum = 0;          //发送个数
-uint8_t CoolingTimeOutFlag = 0;      //超时使能
-uint32_t CoolingTimeOutCount = 0;    //超时计数器
+uint8_t TMSWorkStatus = 0;       //工作状态
+uint8_t TMSCount = 0;            //计数器
+uint8_t TMSRecvCount = 0;        //接收计数器
+uint8_t TMSSendCount = 0;        //发送计数器
+uint8_t TMSRecvNum = 0;          //接收个数
+uint8_t TMSSendNum = 0;          //发送个数
+uint8_t TMSTimeOutFlag = 0;      //超时使能
+uint32_t TMSTimeOutCount = 0;    //超时计数器
 
 uint8_t Rx_dat = 0;
 
@@ -37,29 +37,22 @@ uint8_t USART_RX_BUF[USART_REC_LEN];
 uint16_t USART_RX_STA;
 uint8_t aRxBuffer[RXBUFFERSIZE];
 
-// Modbus_Report_Pack_TypeDef Modbus_Report_Pack = {0};  //水冷实时数据
-Cooling_HandleTypeDef* Cooling_Handle;
+TMS_HandleTypeDef* TMS_Handle;
 
 
-// uint8_t aucCoolingCHECKALLCmd[8]	=  {0xAA, 0x03, 0x00, 0x00, 0x00, 0x12, 0xDC, 0x1C};//查询12个寄存器指令
-// uint8_t aucCoolingOFFCmd[8]		=  {0xAA, 0x06, 0x00, 0x00, 0x00, 0x00, 0x90, 0x11};//关机指令
-// uint8_t aucCoolingONCmd[27]		=  {0xAA, 0x10, 0x00, 0x00, 0x00, 0x09, 0x12, 0x00, 0x01, 
+// uint8_t aucTMSCHECKALLCmd[8]	=  {0xAA, 0x03, 0x00, 0x00, 0x00, 0x12, 0xDC, 0x1C};//查询12个寄存器指令
+// uint8_t aucTMSOFFCmd[8]			=  {0xAA, 0x06, 0x00, 0x00, 0x00, 0x00, 0x90, 0x11};//关机指令
+// uint8_t aucTMSONCmd[27]			=  {0xAA, 0x10, 0x00, 0x00, 0x00, 0x09, 0x12, 0x00, 0x01, 
 // 											0x00, 0x64, 0x00, 0x01, 0x00, 0x05, 0x00, 0x00, 0x02, 
 //                                 			0x58, 0x03, 0x20, 0x03, 0x20, 0x01, 0xF4, 0x21, 0x6A}; //开机指令，目标温度10度
-// uint8_t aucCoolingTargTempCmd[8]		=	{0xAA, 0x06, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00};//设置指令
-// uint8_t aucCooling06Cmd[8]				=	{0xAA, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};//设置指令
-// uint8_t aucCooling10Cmd[27]				=	{0xAA, 0x10, 0x00, 0x00, 0x00, 0x09, 0x12, 0x00, 0x01, 	\
-// 											0x00, 0x64, 0x00, 0x01, 0x00, 0x05, 0x00, 0x00, 0x02, 	\
-//                 							0x58, 0x03, 0x20, 0x03, 0x20, 0x01, 0xF4, 0x00, 0x00}; //开机指令，目标温度10度
-// 											// 校验结果是6A21 
+// uint8_t aucTMSTargTempCmd[8]	=	{0xAA, 0x06, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00};//设置指令
+// uint8_t aucTMS06Cmd[8]			=	{0xAA, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};//设置指令
+// uint8_t aucTMS10Cmd[27]			=	{0xAA, 0x10, 0x00, 0x00, 0x00, 0x09, 0x12, 0x00, 0x01, 	\
+// 									0x00, 0x64, 0x00, 0x01, 0x00, 0x05, 0x00, 0x00, 0x02, 	\
+// 									0x58, 0x03, 0x20, 0x03, 0x20, 0x01, 0xF4, 0x00, 0x00}; //开机指令，目标温度10度
+// 									// 校验结果是6A21 
 
 
-uint8_t aucCoolingCHECKALLCmd[8]	=	{0x01, 0x03, 0x20, 0x00, 0x00, 0x01, 0x8F, 0xCA};//查询当前温度
-uint8_t aucCoolingOFFCmd[8]			=	{0x01, 0x06, 0x20, 0x31, 0x00, 0x00, 0xD3, 0xC5};//关机指令
-uint8_t aucCoolingONCmd[8]			=	{0x01, 0x06, 0x20, 0x31, 0x00, 0x03, 0x93, 0xC4}; //开机指令
-uint8_t aucCoolingTargTempCmd[8]	=	{0x01, 0x06, 0x20, 0x03, 0x03, 0xE8, 0x72, 0xB4};//设置目标温度为10°
-uint8_t aucCooling06Cmd[8]			=	{0};
-uint8_t aucCooling10Cmd[27]			=	{0};
 
 uint8_t modbus_slave_addr = 0x01; // 长流水冷机地址
 uint8_t modbus_Tx_buff[100];	  // 发送缓冲区
@@ -70,8 +63,8 @@ void copyArray(int source[], int target[], int length) {
     memcpy(target, source, length * sizeof(int));
 }
 
-void aucCooling(){
-    Cooling_Handle->modbus_count++;
+void aucTMS(){
+    TMS_Handle->modbus_count++;
 }
 
 uint8_t auchCRCHi[] = {
@@ -130,99 +123,77 @@ char auchCRCLo[] = {
 0x44, 0x84, 0x85, 0x45, 0x87, 0x47, 0x46, 0x86, 0x82, 0x42,
 0x43, 0x83, 0x41, 0x81, 0x80, 0x40};
 
-// static uint16_t CRC16(uint8_t *puchMsg, uint16_t usDataLen)
-// {
-// 	uint8_t uchCRCHi = 0xFF;
-// 	uint8_t uchCRCLo = 0xFF;
-// 	unsigned uIndex = 0;
-// 	while (usDataLen--)
-// 	{
-// 		uIndex = uchCRCHi ^ *puchMsg++;
-// 		uchCRCHi = uchCRCLo ^ auchCRCHi[uIndex];
-// 		uchCRCLo = auchCRCLo[uIndex];
-// 	}
-// 	return (uchCRCHi<<8 | uchCRCLo);
-// }
-
-unsigned char *data; 
-unsigned char length; 
-/**
- * @brief 标准modbus-CRC
- * 
- */
-static uint16_t CRC16(unsigned char *data,unsigned char length) { 
-	unsigned char j;
-	unsigned int reg_crc=0xffff; 
-	while(length--){ 
-		reg_crc^=*data++; 
-		for(j=0;j<8;j++){ 
-			if(reg_crc&0x01){ 
-				reg_crc=(reg_crc>>1)^0xa001;
-			} else{ 
-				reg_crc=reg_crc>>1; 
-			} 
-		} 
-	} 
-	return reg_crc; 
+static uint16_t CRC16(uint8_t *puchMsg, uint16_t usDataLen)
+{
+	uint8_t uchCRCHi = 0xFF;
+	uint8_t uchCRCLo = 0xFF;
+	unsigned uIndex = 0;
+	while (usDataLen--)
+	{
+		uIndex = uchCRCHi ^ *puchMsg++;
+		uchCRCHi = uchCRCLo ^ auchCRCHi[uIndex];
+		uchCRCLo = auchCRCLo[uIndex];
+	}
+	return (uchCRCHi<<8 | uchCRCLo);
 }
 
 static void send_data(uint8_t *buff, uint8_t len)
 {
-	HAL_UART_Transmit_IT(Cooling_Handle->huart, (uint8_t *)buff, len); // 发送数据   把buff
+	HAL_UART_Transmit_IT(TMS_Handle->huart, (uint8_t *)buff, len); // 发送数据   把buff
 	// while (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_TC) != SET); // 等待发送结束
 }
 
-static void CoolingOperateSystemON(){
-	send_data(aucCoolingONCmd, 27);
+static void TMSOperateSystemON(){
+	send_data(aucTMSONCmd, 27);
 }
 
-static void CoolingOperateSystemOFF(){
-	send_data(aucCoolingOFFCmd, 8);
-
-}
-
-static void CoolingOperateGetData(){
-	send_data(aucCoolingCHECKALLCmd, 8);
+static void TMSOperateSystemOFF(){
+	send_data(aucTMSOFFCmd, 8);
 
 }
 
-static void CoolingOperateSetTemp(uint8_t value){
+static void TMSOperateGetData(){
+	send_data(aucTMSCHECKALLCmd, 8);
+
+}
+
+static void TMSOperateSetTemp(uint8_t value){
 	uint16_t crcCheck = 0;
-	aucCoolingTargTempCmd[4] = ((value + 50) * 10) / 256;
-	aucCoolingTargTempCmd[5] = ((value + 50) * 10) % 256;
+	aucTMSTargTempCmd[4] = ((value + 50) * 10) / 256;
+	aucTMSTargTempCmd[5] = ((value + 50) * 10) % 256;
 	
-	crcCheck = CRC16(aucCoolingTargTempCmd, 6);
-	aucCoolingTargTempCmd[6] = crcCheck / 256;
-	aucCoolingTargTempCmd[7] = crcCheck % 256;
+	crcCheck = CRC16(aucTMSTargTempCmd, 6);
+	aucTMSTargTempCmd[6] = crcCheck / 256;
+	aucTMSTargTempCmd[7] = crcCheck % 256;
 
-	send_data(aucCoolingTargTempCmd, 8);
+	send_data(aucTMSTargTempCmd, 8);
 
 }
 
 
 
-static void CoolingOperate(Cooling_OperateTypeDef operateCMD, uint8_t value){
+static void TMSOperate(TMS_OperateTypeDef operateCMD, uint8_t value){
 
 	switch(operateCMD)
 	{
         
 		case SYSTEM_ON:
-            CoolingOperateSystemON();
+            TMSOperateSystemON();
 
 			break;
 
 		case SYSTEM_OFF:
-            CoolingOperateSystemOFF();
+            TMSOperateSystemOFF();
 			
             break;
 
 		case SYSTEM_GET_DATA:
-            CoolingOperateGetData();
+            TMSOperateGetData();
 
             break;
 
 		case SYSTEM_SET_TEMP_DATA:
-            CoolingOperateSetTemp(value);
+            TMSOperateSetTemp(value);
 
             break;
 
@@ -235,69 +206,69 @@ static void CoolingOperate(Cooling_OperateTypeDef operateCMD, uint8_t value){
 static void	updataPSD(){
 	uint8_t	index=0;
 	uint8_t	bitindex=0;
-	if(Cooling_Handle->modbusReport.PSD & (1 << index++)){//水位报警
+	if(TMS_Handle->modbusReport.PSD & (1 << index++)){//水位报警
 		//水位有三个状态
-		Cooling_Handle->Cooling_PSD.CoolingLiquidLevelERR = Cooling_Handle->modbusReport.liquidheight;
-		Cooling_Handle->Cooling_PSD.CoolingERRflag |= (1 << bitindex++);
+		TMS_Handle->TMS_PSD.TMSLiquidLevelERR = TMS_Handle->modbusReport.liquidheight;
+		TMS_Handle->TMS_PSD.TMSERRflag |= (1 << bitindex++);
 	}else{
-		Cooling_Handle->Cooling_PSD.CoolingLiquidLevelERR = 0;
-		Cooling_Handle->Cooling_PSD.CoolingERRflag &= ~(1 << bitindex++);
+		TMS_Handle->TMS_PSD.TMSLiquidLevelERR = 0;
+		TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
 	}
 
-	if(Cooling_Handle->modbusReport.PSD & (1 << index++)){//水流报警
-		Cooling_Handle->Cooling_PSD.CoolingPumpFlowERR = 1;
-		Cooling_Handle->Cooling_PSD.CoolingERRflag |= (1 << bitindex++);
+	if(TMS_Handle->modbusReport.PSD & (1 << index++)){//水流报警
+		TMS_Handle->TMS_PSD.TMSPumpFlowERR = 1;
+		TMS_Handle->TMS_PSD.TMSERRflag |= (1 << bitindex++);
 	}else{
-		Cooling_Handle->Cooling_PSD.CoolingPumpFlowERR = 0;
-		Cooling_Handle->Cooling_PSD.CoolingERRflag &= ~(1 << bitindex++);
+		TMS_Handle->TMS_PSD.TMSPumpFlowERR = 0;
+		TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
 	}
 
-	if(Cooling_Handle->modbusReport.PSD & (1 << index++)){//高温报警
-		Cooling_Handle->Cooling_PSD.CoolingHighTempERR = 1;
-		Cooling_Handle->Cooling_PSD.CoolingERRflag |= (1 << bitindex++);
+	if(TMS_Handle->modbusReport.PSD & (1 << index++)){//高温报警
+		TMS_Handle->TMS_PSD.TMSHighTempERR = 1;
+		TMS_Handle->TMS_PSD.TMSERRflag |= (1 << bitindex++);
 	}else{
-		Cooling_Handle->Cooling_PSD.CoolingHighTempERR = 0;
-		Cooling_Handle->Cooling_PSD.CoolingERRflag &= ~(1 << bitindex++);
+		TMS_Handle->TMS_PSD.TMSHighTempERR = 0;
+		TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
 	}
 
-	if(Cooling_Handle->modbusReport.PSD & (1 << index++)){//低温报警
-		Cooling_Handle->Cooling_PSD.CoolingLowTempERR = 1;
-		Cooling_Handle->Cooling_PSD.CoolingERRflag |= (1 << bitindex++);
+	if(TMS_Handle->modbusReport.PSD & (1 << index++)){//低温报警
+		TMS_Handle->TMS_PSD.TMSLowTempERR = 1;
+		TMS_Handle->TMS_PSD.TMSERRflag |= (1 << bitindex++);
 	}else{
-		Cooling_Handle->Cooling_PSD.CoolingLowTempERR = 0;
-		Cooling_Handle->Cooling_PSD.CoolingERRflag &= ~(1 << bitindex++);
+		TMS_Handle->TMS_PSD.TMSLowTempERR = 0;
+		TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
 	}
 
-	if(Cooling_Handle->modbusReport.PSD & (1 << index++)){//热端报警
-		Cooling_Handle->Cooling_PSD.CoolingHotSideERR = 1;
-		Cooling_Handle->Cooling_PSD.CoolingERRflag |= (1 << bitindex++);
+	if(TMS_Handle->modbusReport.PSD & (1 << index++)){//热端报警
+		TMS_Handle->TMS_PSD.TMSHotSideERR = 1;
+		TMS_Handle->TMS_PSD.TMSERRflag |= (1 << bitindex++);
 	}else{
-		Cooling_Handle->Cooling_PSD.CoolingHotSideERR = 0;
-		Cooling_Handle->Cooling_PSD.CoolingERRflag &= ~(1 << bitindex++);
+		TMS_Handle->TMS_PSD.TMSHotSideERR = 0;
+		TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
 	}
 
-	if(Cooling_Handle->modbusReport.PSD & (1 << index++)){//水泵报警
-		Cooling_Handle->Cooling_PSD.CoolingPumpERR = 1;
-		Cooling_Handle->Cooling_PSD.CoolingERRflag |= (1 << bitindex++);
+	if(TMS_Handle->modbusReport.PSD & (1 << index++)){//水泵报警
+		TMS_Handle->TMS_PSD.TMSPumpERR = 1;
+		TMS_Handle->TMS_PSD.TMSERRflag |= (1 << bitindex++);
 	}else{
-		Cooling_Handle->Cooling_PSD.CoolingPumpERR = 0;
-		Cooling_Handle->Cooling_PSD.CoolingERRflag &= ~(1 << bitindex++);
+		TMS_Handle->TMS_PSD.TMSPumpERR = 0;
+		TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
 	}
 
-	if(Cooling_Handle->modbusReport.PSD & (1 << index++)){//风扇报警
-		Cooling_Handle->Cooling_PSD.CoolingFanERR = 1;
-		Cooling_Handle->Cooling_PSD.CoolingERRflag |= (1 << bitindex++);
+	if(TMS_Handle->modbusReport.PSD & (1 << index++)){//风扇报警
+		TMS_Handle->TMS_PSD.TMSFanERR = 1;
+		TMS_Handle->TMS_PSD.TMSERRflag |= (1 << bitindex++);
 	}else{
-		Cooling_Handle->Cooling_PSD.CoolingFanERR = 0;
-		Cooling_Handle->Cooling_PSD.CoolingERRflag &= ~(1 << bitindex++);
+		TMS_Handle->TMS_PSD.TMSFanERR = 0;
+		TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
 	}
 	
-	if(Cooling_Handle->modbusReport.PSD & (1 << index++)){//制冷开关
-		Cooling_Handle->Cooling_PSD.CoolingRunState = 1;
-		Cooling_Handle->Cooling_PSD.CoolingERRflag |= (1 << bitindex++);
+	if(TMS_Handle->modbusReport.PSD & (1 << index++)){//制冷开关
+		TMS_Handle->TMS_PSD.TMSRunState = 1;
+		TMS_Handle->TMS_PSD.TMSERRflag |= (1 << bitindex++);
 	}else{
-		Cooling_Handle->Cooling_PSD.CoolingRunState = 0;
-		Cooling_Handle->Cooling_PSD.CoolingERRflag &= ~(1 << bitindex++);
+		TMS_Handle->TMS_PSD.TMSRunState = 0;
+		TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
 	}
 
 }
@@ -311,21 +282,21 @@ static void modbus_03_Receivefunction(uint8_t data_len)
 	{
 		
 		value = (uint16_t)((USART_RX_BUF[i * 2  + 3 ] << 8) | USART_RX_BUF[i * 2 + 3 + 1]);
-		ptr = (uint16_t*)&(Cooling_Handle->modbusReport);
+		ptr = (uint16_t*)&(TMS_Handle->modbusReport);
 		ptr[i] = value;
 		
 	}
 	if(data_len<42)
 	{
-		Cooling_Handle->modbusReport.CoolRevsionYear = 0;	
-		Cooling_Handle->modbusReport.CoolRevsionMoDa = 0;	
+		TMS_Handle->modbusReport.CoolRevsionYear = 0;	
+		TMS_Handle->modbusReport.CoolRevsionMoDa = 0;	
 	}
 	updataPSD();
 	
 	
 }
 
-static void CoolingModbus_service(){
+static void TMSModbus_service(){
 	uint16_t data_CRC_value;   
 	uint16_t data_len;		   
 	uint16_t CRC_check_result; 
@@ -369,43 +340,43 @@ static void RxCplt(void)
 {
 	if ((USART_RX_STA & 0x8000) == 0) 
 	{
-		Cooling_Handle->modbus_count = 0;
+		TMS_Handle->modbus_count = 0;
 		USART_RX_BUF[USART_RX_STA & 0X3FFF] = aRxBuffer[0];
 		USART_RX_STA++;
 		if (USART_RX_STA > (USART_REC_LEN - 1))
 			USART_RX_STA = 0; 
 	}
-	HAL_UART_Receive_IT(Cooling_Handle->huart, (uint8_t *)aRxBuffer, 1);
+	HAL_UART_Receive_IT(TMS_Handle->huart, (uint8_t *)aRxBuffer, 1);
 }
 
 
-static void CoolingWorkCMD(){
-	CoolingCount++;
-	if(CoolingCount == 1) //	更新频率为20hz时，每0.5秒触发一次
+static void TMSWorkCMD(){
+	TMSCount++;
+	if(TMSCount == 1) //	更新频率为20hz时，每0.5秒触发一次
 	{
-		CoolingOperate(SYSTEM_GET_DATA,NULL);
+		TMSOperate(SYSTEM_GET_DATA,NULL);
 		
-		if(Cooling_Handle->modbusReport.CoolingRunState == 1)
+		if(TMS_Handle->modbusReport.TMSRunState == 1)
 		{
-			CoolingWorkStatus = Cooling_CMD;
+			TMSWorkStatus = TMS_CMD;
 		}
 		else
 		{
-			CoolingWorkStatus = Cooling_STOP;
+			TMSWorkStatus = TMS_STOP;
 		}
 	}
-	else if(CoolingCount == 2) //更新频率为20hz时，每1秒触发一次
+	else if(TMSCount == 2) //更新频率为20hz时，每1秒触发一次
 	{
 		if(targetTemp > 25){
-			CoolingOperate(SYSTEM_SET_TEMP_DATA,5);
+			TMSOperate(SYSTEM_SET_TEMP_DATA,5);
 		}
 		else if(targetTemp > 20 && targetTemp <= 25)
 		{
-			CoolingOperate(SYSTEM_SET_TEMP_DATA,7);
+			TMSOperate(SYSTEM_SET_TEMP_DATA,7);
 		}
 		else if(targetTemp > 18 && targetTemp <= 20)
 		{
-			CoolingOperate(SYSTEM_SET_TEMP_DATA,9);
+			TMSOperate(SYSTEM_SET_TEMP_DATA,9);
 		}
 		else if(targetTemp > 16 && targetTemp <= 18)
 		{
@@ -413,16 +384,16 @@ static void CoolingWorkCMD(){
 		}
 		else if(targetTemp > 5 && targetTemp <= 16)
 		{
-			CoolingOperate(SYSTEM_SET_TEMP_DATA,17);
+			TMSOperate(SYSTEM_SET_TEMP_DATA,17);
 		}
 		else if(targetTemp < 5)
 		{
-			CoolingOperate(SYSTEM_SET_TEMP_DATA,17);
+			TMSOperate(SYSTEM_SET_TEMP_DATA,17);
 		}
 	}
-	else if(CoolingCount >= 3) //更新频率为20hz时，每1.5秒触发一次
+	else if(TMSCount >= 3) //更新频率为20hz时，每1.5秒触发一次
 	{
-		CoolingCount = 0; 
+		TMSCount = 0; 
 	}
 }
 
@@ -436,40 +407,40 @@ static void CoolingWorkCMD(){
  *        2. 判断开机调节，查询是否开机
  *        3. 检查开机是否完成，
  *        4. 
- * @param hcooling 
+ * @param hTMS 
  */
-static Cooling_FunStatusTypeDef Run(){
-    static Cooling_StateTypeDef CoolingWorkStatus = Cooling_STOP ;
+static TMS_FunStatusTypeDef Run(){
+    static TMS_StateTypeDef TMSWorkStatus = TMS_STOP ;
 	// uint8_t BAT_DATA_Pack =0 ;
     if(BAT_DATA_Pack  > 0){
-        switch(CoolingWorkStatus){
-			case Cooling_STOP:
+        switch(TMSWorkStatus){
+			case TMS_STOP:
 			{//关机状态下发送开机指令
-				CoolingWorkStatus = Cooling_GET_STATE;
-				CoolingOperate(SYSTEM_ON,NULL);
+				TMSWorkStatus = TMS_GET_STATE;
+				TMSOperate(SYSTEM_ON,NULL);
 				break;
 			}
-			case Cooling_GET_STATE:
+			case TMS_GET_STATE:
 			{//读取液冷所有寄存器数值
-				CoolingWorkStatus = Cooling_CHECK;
-				CoolingOperate(SYSTEM_GET_DATA,NULL);
+				TMSWorkStatus = TMS_CHECK;
+				TMSOperate(SYSTEM_GET_DATA,NULL);
 				break;
 			}
-			case Cooling_CHECK:
+			case TMS_CHECK:
 			{//判定水冷工作状态，正常开机继续执行，异常开机返回0步骤
-				if(Cooling_Handle->modbusReport.CoolingRunState == 1)
+				if(TMS_Handle->modbusReport.TMSRunState == 1)
 				{
-					CoolingWorkStatus = Cooling_CMD;
+					TMSWorkStatus = TMS_CMD;
 				}
 				else
 				{
-					CoolingWorkStatus = Cooling_STOP;
+					TMSWorkStatus = TMS_STOP;
 				}
 				break;
 			}
-			case Cooling_CMD:
+			case TMS_CMD:
 			{//水冷控制
-				CoolingWorkCMD();
+				TMSWorkCMD();
 				break;
 			}
 			default:
@@ -478,22 +449,22 @@ static Cooling_FunStatusTypeDef Run(){
 	}
 	else
 	{
-		CoolingWorkStatus = Cooling_STOP;
-		CoolingOperate(SYSTEM_OFF,NULL);
+		TMSWorkStatus = TMS_STOP;
+		TMSOperate(SYSTEM_OFF,NULL);
 	
     }
-	return Cooling_OK;
+	return TMS_OK;
 }
 
 /**
  * @brief 液冷控制器停止函数
  *        
  * @todo  暂时无用
- * @param hcooling 
+ * @param hTMS 
  */
-static Cooling_FunStatusTypeDef Stop(){
+static TMS_FunStatusTypeDef Stop(){
 
-	return Cooling_OK;
+	return TMS_OK;
 }
 
 /**
@@ -502,20 +473,20 @@ static Cooling_FunStatusTypeDef Stop(){
  * @todo  初始化所需数据,读取版本号
  *  
  */
-static Cooling_FunStatusTypeDef Init(){
+static TMS_FunStatusTypeDef Init(){
 	USART_RX_STA = 0; // 准备接收
     
 
-	return Cooling_OK;
+	return TMS_OK;
 }
 
-static Cooling_FunStatusTypeDef UpdataPack(){
+static TMS_FunStatusTypeDef UpdataPack(){
 
-	if(Cooling_Handle->modbus_count > 4 && ((USART_RX_STA & 0X3FFF) != 0)){
+	if(TMS_Handle->modbus_count > 4 && ((USART_RX_STA & 0X3FFF) != 0)){
 		USART_RX_STA |= 0x8000;
-		CoolingModbus_service();
+		TMSModbus_service();
 	}
-	return Cooling_OK;
+	return TMS_OK;
 }
 
 
@@ -523,22 +494,22 @@ static Cooling_FunStatusTypeDef UpdataPack(){
  * @brief 液冷控制器注册函数
  *        绑定所需结构函数
  * @todo  串口绑定方式待定
- * @param huartcooling:绑定收发数据接口
+ * @param huartTMS:绑定收发数据接口
  */
-Cooling_FunStatusTypeDef CoolingCreate( UART_HandleTypeDef *huartcooling)
+TMS_FunStatusTypeDef TMSCreate( UART_HandleTypeDef *huartTMS)
 {
-	Cooling_Handle = malloc(sizeof(Cooling_HandleTypeDef));
+	TMS_Handle = malloc(sizeof(TMS_HandleTypeDef));
 
-	Cooling_Handle->Run				= Run;
-	Cooling_Handle->Stop			= Stop;
-	Cooling_Handle->Init			= Init;
-	Cooling_Handle->UpdataPack		= UpdataPack;
-	Cooling_Handle->RxCplt			= RxCplt;
+	TMS_Handle->Run				= Run;
+	TMS_Handle->Stop			= Stop;
+	TMS_Handle->Init			= Init;
+	TMS_Handle->UpdataPack		= UpdataPack;
+	TMS_Handle->RxCplt			= RxCplt;
 	
-	Cooling_Handle->huart = huartcooling;
-	HAL_UART_Receive_IT(Cooling_Handle->huart, (uint8_t *)aRxBuffer, 1);
-	Cooling_Handle->coolingSYSstatus = Cooling_Inited;
+	TMS_Handle->huart = huartTMS;
+	HAL_UART_Receive_IT(TMS_Handle->huart, (uint8_t *)aRxBuffer, 1);
+	TMS_Handle->TMSSYSstatus = TMS_Inited;
 	
-	return Cooling_OK;
+	return TMS_OK;
 }
 

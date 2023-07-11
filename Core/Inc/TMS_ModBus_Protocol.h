@@ -37,6 +37,10 @@ typedef enum
     TMS_CMD         = 0x03
 } TMS_StateTypeDef;//状态机定义
 
+
+
+
+
 typedef enum
 {
     SYSTEM_ON               = 0x00,         /*  设置系统开机*/

@@ -31,7 +31,13 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+typedef enum
+{
+    CoolingStop         = 0x00,
+    CoolingStart        = 0x01,
+    CoolingSetTemp      = 0x02,
+    CoolingGetData      = 0x03
+} Cooling_CMDDef;//水冷控制器状态机定义
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -66,6 +72,8 @@ UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 #endif
+
+Cooling_CMDDef cooling_CMD = CoolingStop;
 
 #if 1 //折叠系统代码
 /* USER CODE END PV */
@@ -125,6 +133,33 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   
 }
 
+void cooling_CMDfun(){
+  switch (cooling_CMD){
+    // 接收到停机指令，向水冷发送停机指令
+    case CoolingStop:
+
+    break;
+
+    // 接收到开机指令，向水冷发送开机指令
+    case CoolingStart:
+
+    break;
+
+    // 接收到设置温度指令，向水冷发送设置温度指令
+    case CoolingSetTemp:
+
+    break;
+
+    // 接收到获取信息指令，将水冷信息回传给TMS
+    case CoolingGetData:
+
+    break;
+
+    default: break
+    
+  }
+}
+
 
 /* USER CODE END 0 */
 
@@ -179,21 +214,19 @@ int main(void)
   /* USER CODE BEGIN 2 */
   #endif
 
-  usb_printfln("printfln:系统初始化完成");
   CoolingCreate(&huart7);
-  usb_printfln("CoolingCreate初始化完成");
+  TMSCreate(&huart2);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   HAL_TIM_Base_Start_IT(&htim6);
   HAL_Delay(1);
-  usb_printfln("htim6启动，开始液冷控制器周期调度");
-
-
 
   while (1)
   {
+    cooling_CMDfun();
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

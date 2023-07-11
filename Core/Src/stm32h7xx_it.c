@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "cooling_ModBus_Protocol.h"
+#include "TMS_ModBus_Protocol.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -194,9 +195,10 @@ void SysTick_Handler(void)
   static uint32_t tick_counter = 0;
   if (tick_counter++ % 1000 == 0 )
   {
-    HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);
+    HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_1);
   }
   if(Cooling_Handle->modbus_count++>10)Cooling_Handle->modbus_count=10;
+  if(TMS_Handle->modbus_count++>10)TMS_Handle->modbus_count=10;
   
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
@@ -289,11 +291,12 @@ void TIM6_DAC_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM6_DAC_IRQn 0 */
   static uint32_t eventTimer = 0;
-  if ((eventTimer++) % 200 == 0){//20HzÒºÀä¿ØÖÆÆ÷¼à¿Ø
+  if ((eventTimer++) % 200 == 0){
     Cooling_Handle->Run(BAT_DATA_Pack);
     Cooling_Handle->UpdataPack();
-
-    HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_1);
+    TMS_Handle->Run(BAT_DATA_Pack);
+    HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_2);
+    
   }
   /* USER CODE END TIM6_DAC_IRQn 0 */
   HAL_TIM_IRQHandler(&htim6);
