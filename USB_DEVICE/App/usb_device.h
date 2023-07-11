@@ -33,6 +33,7 @@
 
 /* USER CODE BEGIN INCLUDE */
 #include "usbd_cdc_if.h"
+#define USB_DEBUG
 /* USER CODE END INCLUDE */
 
 /** @addtogroup USBD_OTG_DRIVER

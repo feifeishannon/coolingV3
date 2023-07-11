@@ -10,10 +10,14 @@
 
 // AA 03 00 00 00 12 DC 1C 
 // AA 03 24 00 01 00 64 00 01 00 05 00 00 02 58 03 20 03 20 01 F4 01 C5 01 C6 01 C5 00 00 00 00 00 00 00 00 00 03 00 08 51 0B
+// 01 03  06  02 62   00 00    E0 88    90 F9 
+//       num   温度    runtim  state
 
 typedef unsigned int       uint32_t; 		// 消除vscode异常提示
 #define USART_REC_LEN  			200  		// 定义最大接收字节数 200
 #define RXBUFFERSIZE            1           // 缓存大小
+
+extern uint8_t BAT_DATA_Pack;
 
 typedef enum
 {
@@ -43,49 +47,63 @@ typedef enum
     SYSTEM_OFF              = 0x01,         /*  设置系统关机*/
     SYSTEM_GET_TEMP         = 0x02,         /*  获取液冷温度*/
     SYSTEM_SET_TEMP_DATA    = 0x03,         /*  设置目标温度*/
-    SYSTEM_GET_STATE_DATA   = 0x04          /*  获取液冷状态*/
+    SYSTEM_GET_STATE_DATA   = 0x04,         /*  获取液冷状态*/
+    SYSTEM_GET_ALL_DATA     = 0x05          /*  获取液冷状态*/
 } Cooling_OperateTypeDef;                   //功能码定义
 
+
 #pragma pack(1)
 typedef struct
 {
-    uint16_t CoolingRunState;       //0x0000 制冷开机/关机
-    uint16_t PIDProportion ;        //0x0001 PID比例值(0-250)
-    uint16_t PIDIntegral;           //0x0002 PID积分值(0-250)
-    uint16_t PIDDifferential;       //0x0003 PID微分值(0-250)
-    uint16_t PIDSelfTune;           //0x0004 PID自整定开关，取值范围0-1
-    uint16_t TargetTemperature;     //0x0005 设定温度 初始化值20度
-    uint16_t LowAlarmTemperature;   //0x0006 低温报警
-    uint16_t HighAlarmTemperature;  //0x0007 高温报警
-    uint16_t TemperatureCalibration;//0x0008 温度校准
-    uint16_t OutletTemperature;     //0x0009 出口温度
-    uint16_t InletTemperature;      //0x000A 入口温度
-    uint16_t HotSideTemperature;    //0x000B 热端温度      
-    uint16_t CoolingTemperature4;   //0x000C 制冷温度4
-    uint16_t CoolingTemperature5;   //0x000D 制冷温度5
-    uint16_t CoolingTemperature6;   //0x000E 制冷温度6
-    uint16_t WaterPumpFlowRate;     //0x000F 水泵流量
-    uint16_t liquidheight;          //0x0010 液位高度
-    uint16_t PSD;                   //0x0011 寄存器状态
-    uint16_t CoolRevsionYear;       //0x0012 年版本号
-    uint16_t CoolRevsionMoDa;       //0x0013 月日版本号
-} Modbus_Report_Pack_TypeDef;
+    uint16_t WaterTankTemperature;  //  00 温度测量值
+
+    uint16_t RunningTime;           //  01 时间运行值
+
+    uint16_t CoolingRunningState;   //  02 指示灯状态
+
+    uint16_t TargetTemperature ;    //  03 SP温度设定值
+
+    uint16_t STTime;                //  04 ST时间设定值
+
+    uint16_t HighAlarmTemperature;  //  05 AL超温报警值
+
+    uint16_t LowAlarmTemperature;   //  06 dL制冷下偏差控制
+
+    uint16_t PIDProportion;         //  07 P比例带
+
+    uint16_t PIDIntegral;           //  08 I积分时间
+
+    uint16_t PIDDifferential;       //  09 D微分时间
+
+    uint16_t AlarmState;            //  0A SO报警状态
+
+    uint16_t SDregister;            //  0B SD±电选择
+
+} Modbus_ChangLiu_Report_Pack_TypeDef;  // 起始地址：0x2000
 #pragma pack()
 
+typedef struct
+{
+    uint16_t WaterTankTemperature;  //  31 启停控制程序
+    uint16_t PIDSelfTune;           //  32 启停自整定
+    uint16_t BeepAlarm;             //  35 蜂鸣器报警
+    uint16_t PumpCMD ;              //  3C 启停循环水泵
+    uint16_t CoollingCMD;           //  3d 启停制冷压缩机
+} Modbus_ChangLiu_CMD_Pack_TypeDef;  // 起始地址：0x2000
+#pragma pack()
 
 #pragma pack(1)
 typedef struct
 {
-    uint8_t CoolingRunState;        //0x0000 开机/关机
-    uint8_t CoolingFanERR ;         //0x0001 风扇报警
-    uint8_t CoolingPumpERR;         //0x0002 水泵报警
-    uint8_t CoolingHotSideERR;      //0x0003 热端报警
-    uint8_t CoolingLowTempERR;      //0x0004 低温报警
-    uint8_t CoolingHighTempERR;     //0x0005 高温报警
-    uint8_t CoolingPumpFlowERR;     //0x0006 流速报警
-    uint8_t CoolingLiquidLevelERR;  //0x0007 液位报警
-    uint8_t CoolingERRflag;         //0x0008 液冷故障
-} Cooling_PSD_TypeDef;
+    uint8_t CoolingRunState;            // 开机/关机    7
+    uint8_t CoolingHeatState ;          // 加热         6
+    uint8_t CoolingCoolingState;        // 制冷         5
+    uint8_t CoolingPumpFlowAlarm;       // 流量异常     4
+    uint8_t CoolingPumpState;           // 泵运行状态   3
+    uint8_t CoolingTempAlarm;           // 温度异常     2
+    uint8_t CoolingLiquidLevelAlarm;    // 流速异常     1
+    uint8_t CoolingPower;               // 电源         0
+} Cooling_ChangLiu_PSD_TypeDef;
 #pragma pack()
 
 
@@ -95,9 +113,9 @@ typedef struct
  */
 typedef struct
 {
-    Modbus_Report_Pack_TypeDef modbusReport;
+    Modbus_ChangLiu_Report_Pack_TypeDef modbusReport;
     UART_HandleTypeDef *huart;
-    Cooling_PSD_TypeDef Cooling_PSD;
+    Cooling_ChangLiu_PSD_TypeDef Cooling_PSD;
     float currentTemperature;
     float targetTemperature;
     uint8_t modbus_count;

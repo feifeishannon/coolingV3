@@ -12,6 +12,7 @@
         "stdlib.h": "c",
         "usbd_cdc_if.h": "c",
         "usbd_def.h": "c",
-        "usbd_conf.h": "c"
+        "usbd_conf.h": "c",
+        "usb_device.h": "c"
     }
 }

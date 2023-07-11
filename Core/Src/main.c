@@ -190,6 +190,8 @@ int main(void)
   HAL_Delay(1);
   usb_printfln("htim6启动，开始液冷控制器周期调度");
 
+
+
   while (1)
   {
     /* USER CODE END WHILE */

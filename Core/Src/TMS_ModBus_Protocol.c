@@ -440,7 +440,7 @@ static void CoolingWorkCMD(){
  */
 static Cooling_FunStatusTypeDef Run(){
     static Cooling_StateTypeDef CoolingWorkStatus = Cooling_STOP ;
-	uint8_t BAT_DATA_Pack =0 ;
+	// uint8_t BAT_DATA_Pack =0 ;
     if(BAT_DATA_Pack  > 0){
         switch(CoolingWorkStatus){
 			case Cooling_STOP:
