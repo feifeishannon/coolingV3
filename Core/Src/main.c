@@ -23,6 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "cooling_ModBus_Protocol.h"
+#include "TMS_ModBus_Protocol.h"
 #include <stdio.h>
 #include "string.h"
 #include "stdint.h"
@@ -130,6 +131,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
     Cooling_Handle->RxCplt();
 
   }
+  if (huart->Instance == TMS_Handle->huart->Instance)
+  {
+    TMS_Handle->RxCplt();
+
+  }
   
 }
 
@@ -158,7 +164,7 @@ void cooling_CMDfun(){
 
     break;
 
-    default: break
+    default: break;
     
   }
 }
