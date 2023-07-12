@@ -39,7 +39,13 @@ typedef enum
 
 
 
-
+typedef enum
+{
+    CoolingStop         = 0x00,
+    CoolingStart        = 0x01,
+    CoolingSetTemp      = 0x02,
+    CoolingGetData      = 0x03
+} CMDCodeDef;//水冷控制器状态机定义
 
 typedef enum
 {
@@ -99,6 +105,7 @@ typedef struct
 typedef struct
 {
     Modbus_Report_Pack_TypeDef modbusReport;
+    CMDCodeDef CMDCode;
     UART_HandleTypeDef *huart;
     TMS_PSD_TypeDef TMS_PSD;
     float currentTemperature;

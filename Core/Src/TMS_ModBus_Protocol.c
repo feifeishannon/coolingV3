@@ -63,10 +63,6 @@ void copyArray(int source[], int target[], int length) {
     memcpy(target, source, length * sizeof(int));
 }
 
-void aucTMS(){
-    TMS_Handle->modbus_count++;
-}
-
 uint8_t auchCRCHi[] = {
 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0,
 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41,
@@ -144,30 +140,21 @@ static void send_data(uint8_t *buff, uint8_t len)
 }
 
 static void TMSOperateSystemON(){
-	send_data(aucTMSONCmd, 27);
+	TMS_Handle->CMDCode = CoolingStart;
 }
 
 static void TMSOperateSystemOFF(){
-	send_data(aucTMSOFFCmd, 8);
+	TMS_Handle->CMDCode = CoolingStop;
 
 }
 
 static void TMSOperateGetData(){
-	send_data(aucTMSCHECKALLCmd, 8);
+	TMS_Handle->CMDCode = CoolingGetData;
 
 }
 
 static void TMSOperateSetTemp(uint8_t value){
-	uint16_t crcCheck = 0;
-	aucTMSTargTempCmd[4] = ((value + 50) * 10) / 256;
-	aucTMSTargTempCmd[5] = ((value + 50) * 10) % 256;
-	
-	crcCheck = CRC16(aucTMSTargTempCmd, 6);
-	aucTMSTargTempCmd[6] = crcCheck / 256;
-	aucTMSTargTempCmd[7] = crcCheck % 256;
-
-	send_data(aucTMSTargTempCmd, 8);
-
+	TMS_Handle->CMDCode = CoolingSetTemp;
 }
 
 
@@ -214,62 +201,7 @@ static void	updataPSD(){
 		TMS_Handle->TMS_PSD.TMSLiquidLevelERR = 0;
 		TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
 	}
-
-	if(TMS_Handle->modbusReport.PSD & (1 << index++)){//水流报警
-		TMS_Handle->TMS_PSD.TMSPumpFlowERR = 1;
-		TMS_Handle->TMS_PSD.TMSERRflag |= (1 << bitindex++);
-	}else{
-		TMS_Handle->TMS_PSD.TMSPumpFlowERR = 0;
-		TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
-	}
-
-	if(TMS_Handle->modbusReport.PSD & (1 << index++)){//高温报警
-		TMS_Handle->TMS_PSD.TMSHighTempERR = 1;
-		TMS_Handle->TMS_PSD.TMSERRflag |= (1 << bitindex++);
-	}else{
-		TMS_Handle->TMS_PSD.TMSHighTempERR = 0;
-		TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
-	}
-
-	if(TMS_Handle->modbusReport.PSD & (1 << index++)){//低温报警
-		TMS_Handle->TMS_PSD.TMSLowTempERR = 1;
-		TMS_Handle->TMS_PSD.TMSERRflag |= (1 << bitindex++);
-	}else{
-		TMS_Handle->TMS_PSD.TMSLowTempERR = 0;
-		TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
-	}
-
-	if(TMS_Handle->modbusReport.PSD & (1 << index++)){//热端报警
-		TMS_Handle->TMS_PSD.TMSHotSideERR = 1;
-		TMS_Handle->TMS_PSD.TMSERRflag |= (1 << bitindex++);
-	}else{
-		TMS_Handle->TMS_PSD.TMSHotSideERR = 0;
-		TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
-	}
-
-	if(TMS_Handle->modbusReport.PSD & (1 << index++)){//水泵报警
-		TMS_Handle->TMS_PSD.TMSPumpERR = 1;
-		TMS_Handle->TMS_PSD.TMSERRflag |= (1 << bitindex++);
-	}else{
-		TMS_Handle->TMS_PSD.TMSPumpERR = 0;
-		TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
-	}
-
-	if(TMS_Handle->modbusReport.PSD & (1 << index++)){//风扇报警
-		TMS_Handle->TMS_PSD.TMSFanERR = 1;
-		TMS_Handle->TMS_PSD.TMSERRflag |= (1 << bitindex++);
-	}else{
-		TMS_Handle->TMS_PSD.TMSFanERR = 0;
-		TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
-	}
 	
-	if(TMS_Handle->modbusReport.PSD & (1 << index++)){//制冷开关
-		TMS_Handle->TMS_PSD.TMSRunState = 1;
-		TMS_Handle->TMS_PSD.TMSERRflag |= (1 << bitindex++);
-	}else{
-		TMS_Handle->TMS_PSD.TMSRunState = 0;
-		TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
-	}
 
 }
 
@@ -286,14 +218,24 @@ static void modbus_03_Receivefunction(uint8_t data_len)
 		ptr[i] = value;
 		
 	}
-	if(data_len<42)
-	{
-		TMS_Handle->modbusReport.CoolRevsionYear = 0;	
-		TMS_Handle->modbusReport.CoolRevsionMoDa = 0;	
-	}
+	
+	send_data(USART_RX_BUF, );
 	updataPSD();
 	
-	
+}
+static void modbus_06_Receivefunction(uint8_t data_len)
+{
+	uint16_t value;
+	uint16_t * ptr;
+
+
+}
+
+static void modbus_10_Receivefunction(uint8_t data_len)
+{
+	uint16_t value;
+	uint16_t * ptr;
+
 }
 
 static void TMSModbus_service(){
@@ -310,25 +252,27 @@ static void TMSModbus_service(){
 			{
 				switch (USART_RX_BUF[1])
 				{
-				case 03: 
-				{
-					modbus_03_Receivefunction(data_len);
-					break;
-				}
-				case 06: 
-				{
-					
-					break;
-				}
-				case 16: 
-				{
-					
-					break;
-				}
+					case 03: 
+					{
+						modbus_03_Receivefunction(data_len);
+						break;
+					}
+					case 06: 
+					{
+						modbus_06_Receivefunction(data_len);
+						
+						break;
+					}
+					case 10: 
+					{
+						modbus_10_Receivefunction(data_len);
+						
+						break;
+					}
 				}
 			}
 		}
-		USART_RX_STA = 0; 
+		USART_RX_STA = 0;
 	}
 }
 
@@ -411,13 +355,13 @@ static void TMSWorkCMD(){
  */
 static TMS_FunStatusTypeDef Run(){
     static TMS_StateTypeDef TMSWorkStatus = TMS_STOP ;
-	// uint8_t BAT_DATA_Pack =0 ;
-    if(BAT_DATA_Pack  > 0){
+	TMS_Handle->UpdataPack(); // 更新串口接收来的数据
+    if(1){
         switch(TMSWorkStatus){
 			case TMS_STOP:
 			{//关机状态下发送开机指令
-				TMSWorkStatus = TMS_GET_STATE;
-				TMSOperate(SYSTEM_ON,NULL);
+				TMSWorkStatus = SYSTEM_OFF;
+				TMSOperate(SYSTEM_OFF,NULL);
 				break;
 			}
 			case TMS_GET_STATE:

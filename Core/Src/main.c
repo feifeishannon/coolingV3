@@ -32,13 +32,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-typedef enum
-{
-    CoolingStop         = 0x00,
-    CoolingStart        = 0x01,
-    CoolingSetTemp      = 0x02,
-    CoolingGetData      = 0x03
-} Cooling_CMDDef;//水冷控制器状态机定义
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -73,8 +67,6 @@ UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
 #endif
-
-Cooling_CMDDef cooling_CMD = CoolingStop;
 
 #if 1 //折叠系统代码
 /* USER CODE END PV */
@@ -140,7 +132,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 }
 
 void cooling_CMDfun(){
-  switch (cooling_CMD){
+  switch (TMS_Handle->CMDCode){
     // 接收到停机指令，向水冷发送停机指令
     case CoolingStop:
       printfln("CoolingStop");
@@ -154,6 +146,7 @@ void cooling_CMDfun(){
 
     // 接收到设置温度指令，向水冷发送设置温度指令
     case CoolingSetTemp:
+      //@TODO: 将TMS_Handle的温度转码为Cooling_Handle可用形式并设置
       printfln("CoolingSetTemp");
 
     break;
