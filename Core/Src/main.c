@@ -137,21 +137,24 @@ void cooling_CMDfun(){
   switch (cooling_CMD){
     // 接收到停机指令，向水冷发送停机指令
     case CoolingStop:
-
+      printfln("CoolingStop");
     break;
 
     // 接收到开机指令，向水冷发送开机指令
     case CoolingStart:
+      printfln("CoolingStart");
 
     break;
 
     // 接收到设置温度指令，向水冷发送设置温度指令
     case CoolingSetTemp:
+      printfln("CoolingSetTemp");
 
     break;
 
     // 接收到获取信息指令，将水冷信息回传给TMS
     case CoolingGetData:
+      printfln("CoolingGetData");
 
     break;
 

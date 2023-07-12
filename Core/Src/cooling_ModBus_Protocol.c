@@ -288,7 +288,7 @@ static void modbus_03_Receivefunction(uint8_t data_len)
 		
 	}
 	Cooling_Handle->currentTemperature = (float)Cooling_Handle->modbusReport.WaterTankTemperature/100;
-	usb_printfln("当前温度：%f",Cooling_Handle->currentTemperature);
+	printfln("当前温度：%f",Cooling_Handle->currentTemperature);
 	updataPSD(&Cooling_Handle->Cooling_PSD, Cooling_Handle->modbusReport.CoolingRunningState);
 }
 
@@ -359,7 +359,7 @@ static void CoolingWorkCMD(){
 	{
 		CoolingOperate(SYSTEM_GET_ALL_DATA,NULL);
 		#ifdef USB_DEBUG
-			usb_printfln("CoolingOperate:SYSTEM_GET_STATE_DATA=>%d",Cooling_Handle->Cooling_PSD.CoolingCoolingState);
+			printfln("CoolingOperate:SYSTEM_GET_STATE_DATA=>%d",Cooling_Handle->Cooling_PSD.CoolingCoolingState);
 		#endif
 		if(Cooling_Handle->Cooling_PSD.CoolingCoolingState == 1)
 		{
@@ -397,7 +397,7 @@ static Cooling_FunStatusTypeDef Run(uint8_t BAT_DATA_Pack){
 	// BAT_DATA_Pack的初值受S485信号通讯控制,当信号为1时启动开机指令
     static Cooling_StateTypeDef CoolingWorkStatus = Cooling_STOP ;
 	#ifdef USB_DEBUG
-		usb_printfln("CoolingWorkStatus:%d",CoolingWorkStatus);
+		printfln("CoolingWorkStatus:%d",CoolingWorkStatus);
 	#endif
     if(BAT_DATA_Pack  > 0){
         switch(CoolingWorkStatus){

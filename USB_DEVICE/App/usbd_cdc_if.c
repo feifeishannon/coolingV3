@@ -132,7 +132,7 @@ static int8_t CDC_TransmitCplt_HS(uint8_t *pbuf, uint32_t *Len, uint8_t epnum);
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_DECLARATION */
 
-void usb_printfln(const char* format, ...) {
+void printfln(const char* format, ...) {
   va_list args;
   uint32_t length;
   va_start(args, format);
@@ -318,7 +318,7 @@ static int8_t CDC_Receive_HS(uint8_t* Buf, uint32_t *Len)
   }
   
   
-  usb_printfln("接收到数据:%s",str);
+  printfln("接收到数据:%s",str);
   
 
   USBD_CDC_SetRxBuffer(&hUsbDeviceHS, &Buf[0]);
