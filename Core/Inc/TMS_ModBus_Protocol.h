@@ -25,26 +25,15 @@ typedef enum
 
 typedef enum
 {
-    TMS_Null       = 0x00,
-    TMS_Inited     = 0x01
-} TMS_StatusTypeDef;//函数执行状态
-
-typedef enum
-{
-    TMS_STOP        = 0x00,
-    TMS_GET_STATE   = 0x01,
-    TMS_CHECK       = 0x02,
-    TMS_CMD         = 0x03
-} TMS_StateTypeDef;//状态机定义
-
-
-
-typedef enum
-{
-    CoolingStop         = 0x00,
-    CoolingStart        = 0x01,
-    CoolingSetTemp      = 0x02,
-    CoolingGetData      = 0x03
+    CoolingCMDStop          = 0x00,
+    CoolingCMDStart         = 0x01,
+    CoolingSetTemp          = 0x02,
+    CoolingGetData          = 0x03,
+    CoolingPumpStop       = 0x04,
+    CoolingPumpStart      = 0x05,
+    CoolingCompressorStop   = 0x06,
+    CoolingCompressorStart  = 0x07,
+    CoolingWait             = 0xff
 } CMDCodeDef;//水冷控制器状态机定义
 
 typedef enum

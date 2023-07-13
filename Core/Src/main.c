@@ -131,6 +131,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   
 }
 
+/**
+ * @brief 处理TMS发送来的所有指令，根据指令回复相应的数据，并设置水冷的具体控制内容
+ *        处理完一次任务后清空控制标志，等待新任务。
+ * 
+ * @todo: 需处理CMDCodeDef中所有控制量
+ */
 void cooling_CMDfun(){
   switch (TMS_Handle->CMDCode){
     // 接收到停机指令，向水冷发送停机指令
@@ -157,7 +163,9 @@ void cooling_CMDfun(){
 
     break;
 
-    default: break;
+    default: 
+      TMS_Handle->CMDCode = CoolingWait;
+    break;
     
   }
 }

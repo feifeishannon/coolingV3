@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
  * @file    : TMS_ModBus_Protocol.c
- * @brief   : TMS 液冷协议应用程序
+ * @brief   : TMS TMS协议应用程序
  * @version : 1.0.1
  ******************************************************************************
  * @attention
@@ -11,12 +11,8 @@
  */
 #include "TMS_ModBus_Protocol.h"
 
-
 #define USART_REC_LEN 200 
 #define RXBUFFERSIZE 1   
-
-
-
 
 uint8_t TMSRecvBuf[50] = {0};    //接收BUF
 uint8_t TMSSendBuf[50] = {0};    //发送BUF
@@ -39,7 +35,6 @@ uint8_t aRxBuffer[RXBUFFERSIZE];
 
 TMS_HandleTypeDef* TMS_Handle;
 
-
 // uint8_t aucTMSCHECKALLCmd[8]	=  {0xAA, 0x03, 0x00, 0x00, 0x00, 0x12, 0xDC, 0x1C};//查询12个寄存器指令
 // uint8_t aucTMSOFFCmd[8]			=  {0xAA, 0x06, 0x00, 0x00, 0x00, 0x00, 0x90, 0x11};//关机指令
 // uint8_t aucTMSONCmd[27]			=  {0xAA, 0x10, 0x00, 0x00, 0x00, 0x09, 0x12, 0x00, 0x01, 
@@ -51,8 +46,6 @@ TMS_HandleTypeDef* TMS_Handle;
 // 									0x00, 0x64, 0x00, 0x01, 0x00, 0x05, 0x00, 0x00, 0x02, 	\
 // 									0x58, 0x03, 0x20, 0x03, 0x20, 0x01, 0xF4, 0x00, 0x00}; //开机指令，目标温度10度
 // 									// 校验结果是6A21 
-
-
 
 uint8_t modbus_slave_addr = 0x01; // 长流水冷机地址
 uint8_t modbus_Tx_buff[100];	  // 发送缓冲区
@@ -139,62 +132,11 @@ static void send_data(uint8_t *buff, uint8_t len)
 	// while (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_TC) != SET); // 等待发送结束
 }
 
-static void TMSOperateSystemON(){
-	TMS_Handle->CMDCode = CoolingStart;
-}
-
-static void TMSOperateSystemOFF(){
-	TMS_Handle->CMDCode = CoolingStop;
-
-}
-
-static void TMSOperateGetData(){
-	TMS_Handle->CMDCode = CoolingGetData;
-
-}
-
-static void TMSOperateSetTemp(uint8_t value){
-	TMS_Handle->CMDCode = CoolingSetTemp;
-}
-
-
-
-static void TMSOperate(TMS_OperateTypeDef operateCMD, uint8_t value){
-
-	switch(operateCMD)
-	{
-        
-		case SYSTEM_ON:
-            TMSOperateSystemON();
-
-			break;
-
-		case SYSTEM_OFF:
-            TMSOperateSystemOFF();
-			
-            break;
-
-		case SYSTEM_GET_DATA:
-            TMSOperateGetData();
-
-            break;
-
-		case SYSTEM_SET_TEMP_DATA:
-            TMSOperateSetTemp(value);
-
-            break;
-
-		default:
-			return;
-			
-	}
-}
-
 static void	updataPSD(){
 	uint8_t	index=0;
 	uint8_t	bitindex=0;
 	if(TMS_Handle->modbusReport.PSD & (1 << index++)){//水位报警
-		//水位有三个状态
+		
 		TMS_Handle->TMS_PSD.TMSLiquidLevelERR = TMS_Handle->modbusReport.liquidheight;
 		TMS_Handle->TMS_PSD.TMSERRflag |= (1 << bitindex++);
 	}else{
@@ -202,50 +144,104 @@ static void	updataPSD(){
 		TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
 	}
 	
+}
+
+static void TMSOperateSystemON(){
+	TMS_Handle->CMDCode = CoolingCMDStart;
+}
+static void TMSOperateSystemOFF(){
+	TMS_Handle->CMDCode = CoolingCMDStop;
+}
+static void TMSOperatePumpStop(){
+	TMS_Handle->CMDCode = CoolingPumpStop;
+}
+static void TMSOperatePumpStart(){
+	TMS_Handle->CMDCode = CoolingPumpStart;
+}
+static void TMSOperateCompressorStop(){
+	TMS_Handle->CMDCode = CoolingCompressorStop;
+}
+static void TMSOperateCompressorStart(){
+	TMS_Handle->CMDCode = CoolingCompressorStart;
+}
+static void TMSOperateGetData(){
+	TMS_Handle->CMDCode = CoolingGetData;
+}
+static void TMSOperateSetTemp(uint8_t value){
+	TMS_Handle->CMDCode = CoolingSetTemp;
+	TMS_Handle->targetTemperature = (float)value/10-50;//保存设定温度值
 
 }
+
+
 
 static void modbus_03_Receivefunction(uint8_t data_len)
 {
-	uint16_t value;
-	uint16_t * ptr;
-	
-	for (size_t i = 0; i < 20; i++)
-	{
+	TMSOperateGetData();
+}
+
+// 设置06码响应标志位
+static void modbus_06_Receivefunction(uint16_t CMD_register, uint8_t value)
+{
+	switch(CMD_register){
+		case 0x2003: //设置温度
+			TMSOperateSetTemp(value);
+		break;
 		
-		value = (uint16_t)((USART_RX_BUF[i * 2  + 3 ] << 8) | USART_RX_BUF[i * 2 + 3 + 1]);
-		ptr = (uint16_t*)&(TMS_Handle->modbusReport);
-		ptr[i] = value;
+		case 0x2031: //启停控制程序
+			if (value)
+			{
+				TMSOperateSystemON();
+			}else{
+				TMSOperateSystemOFF();
+			}
+			
+		break;
 		
+		case 0x203C: //启停液泵
+			if (value)
+			{
+				TMSOperatePumpStart();
+			}else{
+				TMSOperatePumpStop();
+			}
+		break;
+		
+		case 0x203D: //启停压缩机
+			if (value)
+			{
+				TMSOperateCompressorStart();
+			}else{
+				TMSOperateCompressorStop();
+			}
+		break;
 	}
-	
-	send_data(USART_RX_BUF, );
-	updataPSD();
-	
 }
-static void modbus_06_Receivefunction(uint8_t data_len)
+
+static void modbus_10_Receivefunction()
 {
-	uint16_t value;
-	uint16_t * ptr;
-
-
-}
-
-static void modbus_10_Receivefunction(uint8_t data_len)
-{
-	uint16_t value;
-	uint16_t * ptr;
+	
+	TMSOperate(SYSTEM_GET_DATA,NULL);
+	
 
 }
 
+/**
+ * @brief 
+ * @todo 接收到tms指令后，更新指令携带信息到tmsmodbus结构中，置位标志位，通知主程序执行回传和下发
+ */
 static void TMSModbus_service(){
 	uint16_t data_CRC_value;   
 	uint16_t data_len;		   
 	uint16_t CRC_check_result; 
+	uint16_t CMD_register;
+	uint16_t value;
 	if (USART_RX_STA & 0x8000){
 		data_len = USART_RX_STA & 0x3fff;															 
 		CRC_check_result = CRC16(USART_RX_BUF, data_len - 2);
 		data_CRC_value = USART_RX_BUF[data_len - 2] << 8 | (((uint16_t)USART_RX_BUF[data_len - 1])); 
+		CMD_register = ((uint16_t)USART_RX_BUF[2]<<8) | ((uint16_t)USART_RX_BUF[3]);
+		value = (uint16_t)USART_RX_BUF[4] << 8 | ((uint16_t)USART_RX_BUF[5]);
 		if (CRC_check_result == data_CRC_value)
 		{
 			if (USART_RX_BUF[0] == modbus_slave_addr)
@@ -254,23 +250,25 @@ static void TMSModbus_service(){
 				{
 					case 03: 
 					{
-						modbus_03_Receivefunction(data_len);
+						modbus_03_Receivefunction(CMD_register);
 						break;
 					}
 					case 06: 
 					{
-						modbus_06_Receivefunction(data_len);
+						modbus_06_Receivefunction(CMD_register,value);
 						
 						break;
 					}
 					case 10: 
 					{
-						modbus_10_Receivefunction(data_len);
+						modbus_10_Receivefunction();
 						
 						break;
 					}
 				}
 			}
+			// 确定收到有效数据后更新TMS状态位
+			updataPSD();
 		}
 		USART_RX_STA = 0;
 	}
@@ -293,115 +291,20 @@ static void RxCplt(void)
 	HAL_UART_Receive_IT(TMS_Handle->huart, (uint8_t *)aRxBuffer, 1);
 }
 
-
-static void TMSWorkCMD(){
-	TMSCount++;
-	if(TMSCount == 1) //	更新频率为20hz时，每0.5秒触发一次
-	{
-		TMSOperate(SYSTEM_GET_DATA,NULL);
-		
-		if(TMS_Handle->modbusReport.TMSRunState == 1)
-		{
-			TMSWorkStatus = TMS_CMD;
-		}
-		else
-		{
-			TMSWorkStatus = TMS_STOP;
-		}
-	}
-	else if(TMSCount == 2) //更新频率为20hz时，每1秒触发一次
-	{
-		if(targetTemp > 25){
-			TMSOperate(SYSTEM_SET_TEMP_DATA,5);
-		}
-		else if(targetTemp > 20 && targetTemp <= 25)
-		{
-			TMSOperate(SYSTEM_SET_TEMP_DATA,7);
-		}
-		else if(targetTemp > 18 && targetTemp <= 20)
-		{
-			TMSOperate(SYSTEM_SET_TEMP_DATA,9);
-		}
-		else if(targetTemp > 16 && targetTemp <= 18)
-		{
-			//盲区
-		}
-		else if(targetTemp > 5 && targetTemp <= 16)
-		{
-			TMSOperate(SYSTEM_SET_TEMP_DATA,17);
-		}
-		else if(targetTemp < 5)
-		{
-			TMSOperate(SYSTEM_SET_TEMP_DATA,17);
-		}
-	}
-	else if(TMSCount >= 3) //更新频率为20hz时，每1.5秒触发一次
-	{
-		TMSCount = 0; 
-	}
-}
-
-
 /**
- * @brief 液冷控制器启动函数，液冷状态机
+ * @brief TMS控制器启动函数，TMS状态机
  *        需要将此函数放入主函数体循环中
  *        或创建轮询任务
- * @todo  需完成数据更新、断帧判定、目标温度计算、报警处理
- *        1. 获取液冷模组数据状态
- *        2. 判断开机调节，查询是否开机
- *        3. 检查开机是否完成，
- *        4. 
  * @param hTMS 
  */
 static TMS_FunStatusTypeDef Run(){
-    static TMS_StateTypeDef TMSWorkStatus = TMS_STOP ;
 	TMS_Handle->UpdataPack(); // 更新串口接收来的数据
-    if(1){
-        switch(TMSWorkStatus){
-			case TMS_STOP:
-			{//关机状态下发送开机指令
-				TMSWorkStatus = SYSTEM_OFF;
-				TMSOperate(SYSTEM_OFF,NULL);
-				break;
-			}
-			case TMS_GET_STATE:
-			{//读取液冷所有寄存器数值
-				TMSWorkStatus = TMS_CHECK;
-				TMSOperate(SYSTEM_GET_DATA,NULL);
-				break;
-			}
-			case TMS_CHECK:
-			{//判定水冷工作状态，正常开机继续执行，异常开机返回0步骤
-				if(TMS_Handle->modbusReport.TMSRunState == 1)
-				{
-					TMSWorkStatus = TMS_CMD;
-				}
-				else
-				{
-					TMSWorkStatus = TMS_STOP;
-				}
-				break;
-			}
-			case TMS_CMD:
-			{//水冷控制
-				TMSWorkCMD();
-				break;
-			}
-			default:
-				break;
-		}
-	}
-	else
-	{
-		TMSWorkStatus = TMS_STOP;
-		TMSOperate(SYSTEM_OFF,NULL);
-	
-    }
+    
 	return TMS_OK;
 }
 
 /**
- * @brief 液冷控制器停止函数
+ * @brief TMS控制器停止函数
  *        
  * @todo  暂时无用
  * @param hTMS 
@@ -412,7 +315,7 @@ static TMS_FunStatusTypeDef Stop(){
 }
 
 /**
- * @brief 液冷控制器初始化函数
+ * @brief TMS控制器初始化函数
  *        
  * @todo  初始化所需数据,读取版本号
  *  
@@ -435,7 +338,7 @@ static TMS_FunStatusTypeDef UpdataPack(){
 
 
 /**
- * @brief 液冷控制器注册函数
+ * @brief TMS控制器注册函数
  *        绑定所需结构函数
  * @todo  串口绑定方式待定
  * @param huartTMS:绑定收发数据接口
