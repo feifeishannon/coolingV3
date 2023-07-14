@@ -414,6 +414,11 @@
               <FileType>1</FileType>
               <FilePath>../Core/Src/stm32h7xx_hal_msp.c</FilePath>
             </File>
+            <File>
+              <FileName>TMS_ModBus_Protocol.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\TMS_ModBus_Protocol.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

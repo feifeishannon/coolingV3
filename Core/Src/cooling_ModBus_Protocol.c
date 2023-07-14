@@ -43,11 +43,11 @@ uint8_t CoolingTimeOutFlag = 0;      //超时使能
 uint32_t CoolingTimeOutCount = 0;    //超时计数器
 
 
-uint8_t Rx_dat = 0;
+uint8_t cooling_Rx_dat = 0;
 
-uint8_t USART_RX_BUF[USART_REC_LEN]; 
-uint16_t USART_RX_STA;
-uint8_t aRxBuffer[RXBUFFERSIZE];
+uint8_t coollingUSART_RX_BUF[USART_REC_LEN]; 
+uint16_t cooling_USART_RX_STA;
+uint8_t cooling_aRxBuffer[RXBUFFERSIZE];
 
 // Modbus_Report_Pack_TypeDef Modbus_Report_Pack = {0};  //水冷实时数据
 Cooling_HandleTypeDef* Cooling_Handle;
@@ -61,8 +61,8 @@ uint8_t aucCoolingTargTempCmd[8]	=	{0x01, 0x06, 0x20, 0x03, 0x03, 0xE8, 0x72, 0x
 uint8_t aucCooling06Cmd[8]			=	{0};
 uint8_t aucCooling10Cmd[27]			=	{0};
 
-uint8_t modbus_slave_addr = 0x01; // 长流水冷机地址
-uint8_t modbus_Tx_buff[100];	  // 发送缓冲区
+uint8_t cooling_modbus_slave_addr = 0x01; // 长流水冷机地址
+uint8_t cooling_modbus_Tx_buff[100];	  // 发送缓冲区
 
 unsigned char *data; 
 unsigned char length; 
@@ -198,7 +198,7 @@ static void modbus_03_Receivefunction(uint8_t data_len)
 	
 	for (size_t i = 0; i < data_len/2; i++)
 	{
-		value = (uint16_t)((USART_RX_BUF[i * 2  + 3 ] << 8) | USART_RX_BUF[i * 2 + 3 + 1]);
+		value = (uint16_t)((coollingUSART_RX_BUF[i * 2  + 3 ] << 8) | coollingUSART_RX_BUF[i * 2 + 3 + 1]);
 		ptr = (uint16_t*)&(Cooling_Handle->modbusReport);
 		ptr[i] = value;
 		
@@ -212,19 +212,19 @@ static void CoolingModbus_service(){
 	uint16_t data_CRC_value;   
 	uint16_t data_len;		   
 	uint16_t CRC_check_result; 
-	if (USART_RX_STA & 0x8000){
-		data_len = USART_RX_STA & 0x3fff;															 
-		CRC_check_result = CRC16(USART_RX_BUF, data_len - 2);
-		data_CRC_value = USART_RX_BUF[data_len - 1] << 8 | (((uint16_t)USART_RX_BUF[data_len - 2])); 
+	if (cooling_USART_RX_STA & 0x8000){
+		data_len = cooling_USART_RX_STA & 0x3fff;															 
+		CRC_check_result = CRC16(coollingUSART_RX_BUF, data_len - 2);
+		data_CRC_value = coollingUSART_RX_BUF[data_len - 1] << 8 | (((uint16_t)coollingUSART_RX_BUF[data_len - 2])); 
 		if (CRC_check_result == data_CRC_value)
 		{
-			if (USART_RX_BUF[0] == modbus_slave_addr)
+			if (coollingUSART_RX_BUF[0] == cooling_modbus_slave_addr)
 			{
-				switch (USART_RX_BUF[1])
+				switch (coollingUSART_RX_BUF[1])
 				{
 				case 03: 
 				{
-					modbus_03_Receivefunction(USART_RX_BUF[2]);
+					modbus_03_Receivefunction(coollingUSART_RX_BUF[2]);
 					break;
 				}
 				case 06: 
@@ -240,7 +240,7 @@ static void CoolingModbus_service(){
 				}
 			}
 		}
-		USART_RX_STA = 0; 
+		cooling_USART_RX_STA = 0; 
 	}
 }
 
@@ -251,16 +251,16 @@ static void CoolingModbus_service(){
 static void RxCplt(void)
 {
 	
-	if ((USART_RX_STA & 0x8000) == 0) 
+	if ((cooling_USART_RX_STA & 0x8000) == 0) 
 	{
 		Cooling_Handle->modbus_count = 0;
-		USART_RX_BUF[USART_RX_STA & 0X3FFF] = aRxBuffer[0];
-		USART_RX_STA++;
-		if (USART_RX_STA > (USART_REC_LEN - 1))
-			USART_RX_STA = 0; 
+		coollingUSART_RX_BUF[cooling_USART_RX_STA & 0X3FFF] = cooling_aRxBuffer[0];
+		cooling_USART_RX_STA++;
+		if (cooling_USART_RX_STA > (USART_REC_LEN - 1))
+			cooling_USART_RX_STA = 0; 
 	}
 
-	HAL_UART_Receive_IT(Cooling_Handle->huart, (uint8_t *)aRxBuffer, 1);
+	HAL_UART_Receive_IT(Cooling_Handle->huart, (uint8_t *)cooling_aRxBuffer, 1);
 
 	
 }
@@ -315,7 +315,7 @@ static Cooling_FunStatusTypeDef Run(uint8_t BAT_DATA_Pack){
 	// BAT_DATA_Pack的初值受S485信号通讯控制,当信号为1时启动开机指令
     static Cooling_StateTypeDef CoolingWorkStatus = Cooling_STOP ;
 	#ifdef USB_DEBUG
-		printfln("CoolingWorkStatus:%d",CoolingWorkStatus);
+		// printfln("CoolingWorkStatus:%d",CoolingWorkStatus);
 	#endif
     if(BAT_DATA_Pack  > 0){
         switch(CoolingWorkStatus){
@@ -379,7 +379,7 @@ static Cooling_FunStatusTypeDef Stop(){
  *  
  */
 static Cooling_FunStatusTypeDef Init(){
-	USART_RX_STA = 0; // 准备接收
+	cooling_USART_RX_STA = 0; // 准备接收
     
 
 	return Cooling_OK;
@@ -387,8 +387,8 @@ static Cooling_FunStatusTypeDef Init(){
 
 static Cooling_FunStatusTypeDef UpdataPack(){
 
-	if(Cooling_Handle->modbus_count > 4 && ((USART_RX_STA & 0X3FFF) != 0)){
-		USART_RX_STA |= 0x8000;
+	if(Cooling_Handle->modbus_count > 4 && ((cooling_USART_RX_STA & 0X3FFF) != 0)){
+		cooling_USART_RX_STA |= 0x8000;
 		CoolingModbus_service();
 	}
 	return Cooling_OK;
@@ -412,7 +412,7 @@ Cooling_FunStatusTypeDef CoolingCreate( UART_HandleTypeDef *huartcooling)
 	Cooling_Handle->RxCplt			= RxCplt;
 	
 	Cooling_Handle->huart = huartcooling;
-	HAL_UART_Receive_IT(Cooling_Handle->huart, (uint8_t *)aRxBuffer, 1);
+	HAL_UART_Receive_IT(Cooling_Handle->huart, (uint8_t *)cooling_aRxBuffer, 1);
 	Cooling_Handle->coolingSYSstatus = Cooling_Inited;
 	
 	return Cooling_OK;

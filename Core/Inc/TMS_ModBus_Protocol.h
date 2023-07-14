@@ -29,20 +29,13 @@ typedef enum
     CoolingCMDStart         = 0x01,
     CoolingSetTemp          = 0x02,
     CoolingGetData          = 0x03,
-    CoolingPumpStop       = 0x04,
-    CoolingPumpStart      = 0x05,
+    CoolingPumpStop         = 0x04,
+    CoolingPumpStart        = 0x05,
     CoolingCompressorStop   = 0x06,
     CoolingCompressorStart  = 0x07,
+    CoolingSetAll           = 0x08,
     CoolingWait             = 0xff
 } CMDCodeDef;//水冷控制器状态机定义
-
-typedef enum
-{
-    SYSTEM_ON               = 0x00,         /*  设置系统开机*/
-    SYSTEM_OFF              = 0x01,         /*  设置系统关机*/
-    SYSTEM_GET_DATA         = 0x02,         /*  获取液冷数据*/
-    SYSTEM_SET_TEMP_DATA    = 0x03          /*  设置目标温度*/
-} TMS_OperateTypeDef;                   //功能码定义
 
 #pragma pack(1)
 typedef struct
@@ -101,7 +94,6 @@ typedef struct
     float targetTemperature;
     uint8_t modbus_count;
     // char *info[1000];                       /* 液冷控制器信息描述,1k缓存*/
-    TMS_StatusTypeDef TMSSYSstatus;
     TMS_FunStatusTypeDef (* Init)();       /*!< 配置用户通讯接口   */
     TMS_FunStatusTypeDef (* Run)();        /*!< 启动液冷控制器  建议工作频率20hz   */      
     TMS_FunStatusTypeDef (* Stop)();       /*!< 停止液冷控制器     */      

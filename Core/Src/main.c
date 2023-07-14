@@ -140,13 +140,15 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 void cooling_CMDfun(){
   switch (TMS_Handle->CMDCode){
     // 接收到停机指令，向水冷发送停机指令
-    case CoolingStop:
-      printfln("CoolingStop");
+    case CoolingCMDStop:
+      printfln("CoolingCMDStop");
+      TMS_Handle->CMDCode = CoolingWait;
     break;
 
     // 接收到开机指令，向水冷发送开机指令
-    case CoolingStart:
-      printfln("CoolingStart");
+    case CoolingCMDStart:
+      printfln("CoolingCMDStart");
+      TMS_Handle->CMDCode = CoolingWait;
 
     break;
 
@@ -154,17 +156,48 @@ void cooling_CMDfun(){
     case CoolingSetTemp:
       //@TODO: 将TMS_Handle的温度转码为Cooling_Handle可用形式并设置
       printfln("CoolingSetTemp");
+      TMS_Handle->CMDCode = CoolingWait;
 
     break;
 
     // 接收到获取信息指令，将水冷信息回传给TMS
     case CoolingGetData:
       printfln("CoolingGetData");
+      TMS_Handle->CMDCode = CoolingWait;
+
+    break;
+		
+		// 接收到获取信息指令，将水冷信息回传给TMS
+    case CoolingPumpStop:
+      printfln("CoolingPumpStop");
+      TMS_Handle->CMDCode = CoolingWait;
+
+    break;
+		
+		// 接收到获取信息指令，将水冷信息回传给TMS
+    case CoolingPumpStart:
+      printfln("CoolingPumpStart");
+      TMS_Handle->CMDCode = CoolingWait;
+
+    break;
+		
+		// 接收到获取信息指令，将水冷信息回传给TMS
+    case CoolingCompressorStop:
+      printfln("CoolingCompressorStop");
+      TMS_Handle->CMDCode = CoolingWait;
+
+    break;
+		
+		// 接收到获取信息指令，将水冷信息回传给TMS
+    case CoolingCompressorStart:
+      printfln("CoolingCompressorStart");
+      TMS_Handle->CMDCode = CoolingWait;
 
     break;
 
+		case CoolingWait:
     default: 
-      TMS_Handle->CMDCode = CoolingWait;
+      // TMS_Handle->CMDCode = CoolingWait;
     break;
     
   }
@@ -233,10 +266,14 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   HAL_TIM_Base_Start_IT(&htim6);
   HAL_Delay(1);
-
+  uint16_t counter = 0;
   while (1)
   {
-    cooling_CMDfun();
+    if (counter++ % 1000){
+      cooling_CMDfun();
+
+    }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

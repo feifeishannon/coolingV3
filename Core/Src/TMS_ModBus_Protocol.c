@@ -27,11 +27,11 @@ uint8_t TMSSendNum = 0;          //发送个数
 uint8_t TMSTimeOutFlag = 0;      //超时使能
 uint32_t TMSTimeOutCount = 0;    //超时计数器
 
-uint8_t Rx_dat = 0;
+uint8_t TMS_Rx_dat = 0;
 
-uint8_t USART_RX_BUF[USART_REC_LEN]; 
-uint16_t USART_RX_STA;
-uint8_t aRxBuffer[RXBUFFERSIZE];
+uint8_t TMS_USART_RX_BUF[USART_REC_LEN]; 
+uint16_t TMS_USART_RX_STA;
+uint8_t TMS_aRxBuffer[RXBUFFERSIZE];
 
 TMS_HandleTypeDef* TMS_Handle;
 
@@ -47,8 +47,8 @@ TMS_HandleTypeDef* TMS_Handle;
 // 									0x58, 0x03, 0x20, 0x03, 0x20, 0x01, 0xF4, 0x00, 0x00}; //开机指令，目标温度10度
 // 									// 校验结果是6A21 
 
-uint8_t modbus_slave_addr = 0x01; // 长流水冷机地址
-uint8_t modbus_Tx_buff[100];	  // 发送缓冲区
+uint8_t TMS_modbus_slave_addr = 0x01; // 长流水冷机地址
+uint8_t TMS_modbus_Tx_buff[100];	  // 发送缓冲区
 
 uint16_t targetTemp = 0;
 
@@ -173,9 +173,7 @@ static void TMSOperateSetTemp(uint8_t value){
 
 }
 
-
-
-static void modbus_03_Receivefunction(uint8_t data_len)
+static void modbus_03_Receivefunction( )
 {
 	TMSOperateGetData();
 }
@@ -220,8 +218,8 @@ static void modbus_06_Receivefunction(uint16_t CMD_register, uint8_t value)
 
 static void modbus_10_Receivefunction()
 {
+	TMS_Handle->CMDCode = CoolingSetAll;
 	
-	TMSOperate(SYSTEM_GET_DATA,NULL);
 	
 
 }
@@ -236,21 +234,21 @@ static void TMSModbus_service(){
 	uint16_t CRC_check_result; 
 	uint16_t CMD_register;
 	uint16_t value;
-	if (USART_RX_STA & 0x8000){
-		data_len = USART_RX_STA & 0x3fff;															 
-		CRC_check_result = CRC16(USART_RX_BUF, data_len - 2);
-		data_CRC_value = USART_RX_BUF[data_len - 2] << 8 | (((uint16_t)USART_RX_BUF[data_len - 1])); 
-		CMD_register = ((uint16_t)USART_RX_BUF[2]<<8) | ((uint16_t)USART_RX_BUF[3]);
-		value = (uint16_t)USART_RX_BUF[4] << 8 | ((uint16_t)USART_RX_BUF[5]);
+	if (TMS_USART_RX_STA & 0x8000){
+		data_len = TMS_USART_RX_STA & 0x3fff;															 
+		CRC_check_result = CRC16(TMS_USART_RX_BUF, data_len - 2);
+		data_CRC_value = TMS_USART_RX_BUF[data_len - 2] << 8 | (((uint16_t)TMS_USART_RX_BUF[data_len - 1])); 
+		CMD_register = ((uint16_t)TMS_USART_RX_BUF[2]<<8) | ((uint16_t)TMS_USART_RX_BUF[3]);
+		value = (uint16_t)TMS_USART_RX_BUF[4] << 8 | ((uint16_t)TMS_USART_RX_BUF[5]);
 		if (CRC_check_result == data_CRC_value)
 		{
-			if (USART_RX_BUF[0] == modbus_slave_addr)
+			if (TMS_USART_RX_BUF[0] == TMS_modbus_slave_addr)
 			{
-				switch (USART_RX_BUF[1])
+				switch (TMS_USART_RX_BUF[1])
 				{
 					case 03: 
 					{
-						modbus_03_Receivefunction(CMD_register);
+						modbus_03_Receivefunction();
 						break;
 					}
 					case 06: 
@@ -270,7 +268,7 @@ static void TMSModbus_service(){
 			// 确定收到有效数据后更新TMS状态位
 			updataPSD();
 		}
-		USART_RX_STA = 0;
+		TMS_USART_RX_STA = 0;
 	}
 }
 
@@ -280,15 +278,15 @@ static void TMSModbus_service(){
  */
 static void RxCplt(void)
 {
-	if ((USART_RX_STA & 0x8000) == 0) 
+	if ((TMS_USART_RX_STA & 0x8000) == 0) 
 	{
 		TMS_Handle->modbus_count = 0;
-		USART_RX_BUF[USART_RX_STA & 0X3FFF] = aRxBuffer[0];
-		USART_RX_STA++;
-		if (USART_RX_STA > (USART_REC_LEN - 1))
-			USART_RX_STA = 0; 
+		TMS_USART_RX_BUF[TMS_USART_RX_STA & 0X3FFF] = TMS_aRxBuffer[0];
+		TMS_USART_RX_STA++;
+		if (TMS_USART_RX_STA > (USART_REC_LEN - 1))
+			TMS_USART_RX_STA = 0; 
 	}
-	HAL_UART_Receive_IT(TMS_Handle->huart, (uint8_t *)aRxBuffer, 1);
+	HAL_UART_Receive_IT(TMS_Handle->huart, (uint8_t *)TMS_aRxBuffer, 1);
 }
 
 /**
@@ -321,7 +319,7 @@ static TMS_FunStatusTypeDef Stop(){
  *  
  */
 static TMS_FunStatusTypeDef Init(){
-	USART_RX_STA = 0; // 准备接收
+	TMS_USART_RX_STA = 0; // 准备接收
     
 
 	return TMS_OK;
@@ -329,8 +327,8 @@ static TMS_FunStatusTypeDef Init(){
 
 static TMS_FunStatusTypeDef UpdataPack(){
 
-	if(TMS_Handle->modbus_count > 4 && ((USART_RX_STA & 0X3FFF) != 0)){
-		USART_RX_STA |= 0x8000;
+	if(TMS_Handle->modbus_count > 4 && ((TMS_USART_RX_STA & 0X3FFF) != 0)){
+		TMS_USART_RX_STA |= 0x8000;
 		TMSModbus_service();
 	}
 	return TMS_OK;
@@ -354,8 +352,7 @@ TMS_FunStatusTypeDef TMSCreate( UART_HandleTypeDef *huartTMS)
 	TMS_Handle->RxCplt			= RxCplt;
 	
 	TMS_Handle->huart = huartTMS;
-	HAL_UART_Receive_IT(TMS_Handle->huart, (uint8_t *)aRxBuffer, 1);
-	TMS_Handle->TMSSYSstatus = TMS_Inited;
+	HAL_UART_Receive_IT(TMS_Handle->huart, (uint8_t *)TMS_aRxBuffer, 1);
 	
 	return TMS_OK;
 }
