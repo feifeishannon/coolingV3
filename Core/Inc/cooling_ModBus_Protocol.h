@@ -84,11 +84,12 @@ typedef struct
 
 typedef struct
 {
-    uint16_t WaterTankTemperature;  //  31 启停控制程序
+    uint16_t CoollingTargetTemp;    //  03 SP温度设定值
+    uint16_t CoollingCMD;           //  31 启停控制程序
     uint16_t PIDSelfTune;           //  32 启停自整定
     uint16_t BeepAlarm;             //  35 蜂鸣器报警
     uint16_t PumpCMD ;              //  3C 启停循环水泵
-    uint16_t CoollingCMD;           //  3d 启停制冷压缩机
+    uint16_t PressCMD;              //  3d 启停制冷压缩机
 } Modbus_ChangLiu_CMD_Pack_TypeDef;  // 起始地址：0x2000
 #pragma pack()
 
@@ -115,6 +116,7 @@ typedef struct
 {
     Modbus_ChangLiu_Report_Pack_TypeDef modbusReport;
     UART_HandleTypeDef *huart;
+    Modbus_ChangLiu_CMD_Pack_TypeDef CMD_Pack;
     Cooling_ChangLiu_PSD_TypeDef Cooling_PSD;
     float currentTemperature;
     float targetTemperature;

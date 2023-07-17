@@ -142,12 +142,15 @@ void cooling_CMDfun(){
     // 接收到停机指令，向水冷发送停机指令
     case CoolingCMDStop:
       printfln("CoolingCMDStop");
+      Cooling_Handle->CMD_Pack.CoollingCMD = 0; 
       TMS_Handle->CMDCode = CoolingWait;
     break;
 
     // 接收到开机指令，向水冷发送开机指令
     case CoolingCMDStart:
       printfln("CoolingCMDStart");
+      Cooling_Handle->CMD_Pack.CoollingCMD = 1; 
+
       TMS_Handle->CMDCode = CoolingWait;
 
     break;
@@ -156,6 +159,8 @@ void cooling_CMDfun(){
     case CoolingSetTemp:
       //@TODO: 将TMS_Handle的温度转码为Cooling_Handle可用形式并设置
       printfln("CoolingSetTemp");
+      Cooling_Handle->CMD_Pack.CoollingTargetTemp = TMS_Handle->targetTemperature * 100; 
+
       TMS_Handle->CMDCode = CoolingWait;
 
     break;
@@ -163,6 +168,7 @@ void cooling_CMDfun(){
     // 接收到获取信息指令，将水冷信息回传给TMS
     case CoolingGetData:
       printfln("CoolingGetData");
+      
       TMS_Handle->CMDCode = CoolingWait;
 
     break;

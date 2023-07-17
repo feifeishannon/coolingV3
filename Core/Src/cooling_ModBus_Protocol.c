@@ -142,8 +142,8 @@ static void CoolingOperateSetTemp(uint8_t value){
 
 
 
-static void CoolingOperate(Cooling_OperateTypeDef operateCMD, uint8_t value){
 
+static void CoolingOperate(Cooling_OperateTypeDef operateCMD, uint8_t value){
 	switch(operateCMD)
 	{
         
@@ -265,58 +265,78 @@ static void RxCplt(void)
 	
 }
 
-// 循环获取温度和状态
 static void CoolingWorkCMD(){
-	CoolingCount++;
-
-	
-
-	if(CoolingCount == 1) //	更新频率为20hz时，每0.5秒触发一次
+	switch (CoolingCount)
 	{
+	case 0/* 获取液冷所有寄存器数据 */:
+		/* code */
+		CoolingCount++;
 		CoolingOperate(SYSTEM_GET_ALL_DATA,NULL);
 		#ifdef USB_DEBUG
 			printfln("CoolingOperate:SYSTEM_GET_STATE_DATA=>%d",Cooling_Handle->Cooling_PSD.CoolingCoolingState);
 		#endif
-		if(Cooling_Handle->Cooling_PSD.CoolingCoolingState == 1)
-		{
-			CoolingWorkStatus = Cooling_CMD;
-		}
-		else
+		
+		break;
+	
+	case 1/* 检测液冷状态是否为开机状态，不为开机状态将液冷设置为关机状态,供主状态机执行关机指令 */:
+	//@todo: 确定是否保留此需求，需匹配液冷控制器对应的寄存器位
+		/* code */
+		CoolingCount++;
+		#ifdef USB_DEBUG
+			printfln("");
+		#endif
+		if(Cooling_Handle->Cooling_PSD.CoolingCoolingState != 1)
 		{
 			CoolingWorkStatus = Cooling_STOP;
 		}
-	}
-	else if (CoolingCount == 2){
-		/**@TODO:   
-		 * 1、通过TMS目标温度设定值设置水冷目标温度设定值
-		 * 		目标值和当前设定值比较，有变化后更新水冷目标温度
-		 * 2、通过水冷当前温度值，控制是否启动制冷
-		 * 3、低于某温度时关闭制冷
-		 * 4、高于某温度时开启制冷
-		 * 5、开关频率要大于10分钟每次
-		 */
+		break;
 
-	}
 	
-	else if(CoolingCount >= 3) //更新频率为20hz时，每1.5秒触发一次
-	{
-		CoolingCount = 0; 
+	case 2/* 设置制冷控制器工作状态 */:
+		CoolingCount++;
+		//判断液冷控制器输出寄存器状态，根据状态发送控制指令
+		if(Cooling_Handle->CMD_Pack.CoollingCMD == 0) {
+			CoolingOperate(SYSTEM_OFF,NULL);
+		}else{
+			CoolingOperate(SYSTEM_ON,NULL);
+		}
+	break;
+	
+	case 3/* 设置制冷温度 */:
+	/**@TODO:   
+	 * 1、
+	 */
+		CoolingCount++;
+		//判断液冷控制器输出寄存器状态，根据状态发送控制指令
+		if(Cooling_Handle->CMD_Pack.CoollingTargetTemp != Cooling_Handle->modbusReport.TargetTemperature) {
+			CoolingOperate(SYSTEM_SET_TEMP_DATA,Cooling_Handle->CMD_Pack.CoollingTargetTemp);
+		}
+
+	break;
+
+	default:
+		CoolingCount = 0;
+		break;
 	}
 }
 
 
 /**
- * @brief 液冷控制器启动函数，液冷状态机
- *        需要将此函数放入主函数体循环中
- *        或创建轮询任务
- * @param hcooling 
+ * @brief 	液冷控制器启动函数，液冷状态机
+ *        	需要将此函数放入主函数体循环中
+ *        	或创建轮询任务
+ * 		  	默认开机启动液冷控制，状态更新为读取设备当前信息
+ * 			读取到正确信息后启动液冷控制计算，否则停止液冷
+ *  			
+ * @param  
  */
-static Cooling_FunStatusTypeDef Run(uint8_t BAT_DATA_Pack){
+static Cooling_FunStatusTypeDef Run(){
 	// BAT_DATA_Pack的初值受S485信号通讯控制,当信号为1时启动开机指令
-    static Cooling_StateTypeDef CoolingWorkStatus = Cooling_STOP ;
+    
 	#ifdef USB_DEBUG
 		// printfln("CoolingWorkStatus:%d",CoolingWorkStatus);
 	#endif
+	
     if(BAT_DATA_Pack  > 0){
         switch(CoolingWorkStatus){
 			case Cooling_STOP:

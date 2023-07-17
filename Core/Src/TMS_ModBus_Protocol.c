@@ -219,9 +219,6 @@ static void modbus_06_Receivefunction(uint16_t CMD_register, uint8_t value)
 static void modbus_10_Receivefunction()
 {
 	TMS_Handle->CMDCode = CoolingSetAll;
-	
-	
-
 }
 
 /**
