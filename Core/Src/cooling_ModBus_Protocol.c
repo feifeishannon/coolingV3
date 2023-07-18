@@ -295,6 +295,7 @@ static void CoolingWorkCMD(){
 	case 2/* 设置制冷控制器工作状态 */:
 		CoolingCount++;
 		//判断液冷控制器输出寄存器状态，根据状态发送控制指令
+		//@todo 需增加状态变动监测，当有状态变化时才执行状态控制
 		if(Cooling_Handle->CMD_Pack.CoollingCMD == 0) {
 			CoolingOperate(SYSTEM_OFF,NULL);
 		}else{

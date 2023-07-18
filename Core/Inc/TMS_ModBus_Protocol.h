@@ -25,16 +25,16 @@ typedef enum
 
 typedef enum
 {
-    CoolingCMDStop          = 0x00,
-    CoolingCMDStart         = 0x01,
-    CoolingSetTemp          = 0x02,
-    CoolingGetData          = 0x03,
-    CoolingPumpStop         = 0x04,
-    CoolingPumpStart        = 0x05,
-    CoolingCompressorStop   = 0x06,
-    CoolingCompressorStart  = 0x07,
-    CoolingSetAll           = 0x08,
-    CoolingWait             = 0xff
+    CoolingCMDStop          = 0x00, //  停止液冷控制
+    CoolingCMDStart         = 0x01, //  启动液冷控制
+    CoolingSetTemp          = 0x02, //  设置目标温度
+    CoolingGetData          = 0x03, //  获取液冷状态信息
+    CoolingPumpStop         = 0x04, //  停止液泵
+    CoolingPumpStart        = 0x05, //  启动液泵
+    CoolingCompressorStop   = 0x06, //  停止压缩机
+    CoolingCompressorStart  = 0x07, //  启动压缩机
+    CoolingSetAll           = 0x08, //  设置所有参数
+    CoolingWait             = 0xff  //  待机，等待新指令
 } CMDCodeDef;//水冷控制器状态机定义
 
 #pragma pack(1)

@@ -132,6 +132,26 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 }
 
 /**
+ * @brief 降水冷控制器的数据更新到tms控制器中
+ * 
+ */
+void tms_report_updata(){
+  TMS_Handle->modbusReport.TMSRunState = 
+                        Cooling_Handle->
+                        modbusReport.CoolingRunningState & 0x0080;
+  TMS_Handle->modbusReport.TargetTemperature = 
+                        Cooling_Handle->
+                        modbusReport.TargetTemperature;
+  TMS_Handle->modbusReport.OutletTemperature = 
+                        Cooling_Handle->
+                        modbusReport.WaterTankTemperature;
+  TMS_Handle->modbusReport.PSD = 
+                        (Cooling_Handle->
+                        modbusReport.CoolingRunningState& 0x0080) << 8;
+}
+
+
+/**
  * @brief 处理TMS发送来的所有指令，根据指令回复相应的数据，并设置水冷的具体控制内容
  *        处理完一次任务后清空控制标志，等待新任务。
  * 
@@ -160,43 +180,56 @@ void cooling_CMDfun(){
       //@TODO: 将TMS_Handle的温度转码为Cooling_Handle可用形式并设置
       printfln("CoolingSetTemp");
       Cooling_Handle->CMD_Pack.CoollingTargetTemp = TMS_Handle->targetTemperature * 100; 
-
       TMS_Handle->CMDCode = CoolingWait;
 
     break;
 
+    //@todo:将液冷的回包数据上传到TMS端
     // 接收到获取信息指令，将水冷信息回传给TMS
     case CoolingGetData:
       printfln("CoolingGetData");
-      
+      tms_report_updata();
+      TMS_Handle->
       TMS_Handle->CMDCode = CoolingWait;
 
     break;
 		
-		// 接收到获取信息指令，将水冷信息回传给TMS
+		// 接收到停止液泵指令
     case CoolingPumpStop:
       printfln("CoolingPumpStop");
+
       TMS_Handle->CMDCode = CoolingWait;
 
     break;
 		
-		// 接收到获取信息指令，将水冷信息回传给TMS
+		// 接收到启动液泵指令，
     case CoolingPumpStart:
       printfln("CoolingPumpStart");
+
       TMS_Handle->CMDCode = CoolingWait;
 
     break;
 		
-		// 接收到获取信息指令，将水冷信息回传给TMS
+		// 接收到停止压缩机指令
     case CoolingCompressorStop:
       printfln("CoolingCompressorStop");
+
       TMS_Handle->CMDCode = CoolingWait;
 
     break;
 		
-		// 接收到获取信息指令，将水冷信息回传给TMS
+		// 接收到启动压缩机指令
     case CoolingCompressorStart:
       printfln("CoolingCompressorStart");
+
+      TMS_Handle->CMDCode = CoolingWait;
+
+    break;
+
+    // 接收设置所有寄存器指令
+    case CoolingSetAll:
+      printfln("CoolingSetAll");
+
       TMS_Handle->CMDCode = CoolingWait;
 
     break;
