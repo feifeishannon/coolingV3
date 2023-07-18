@@ -178,44 +178,60 @@ static void modbus_03_Receivefunction( )
 	TMSOperateGetData();
 }
 
-// 设置06码响应标志位
+/**
+ * @brief 解析06码控制
+ * 
+ * @todo
+ * 1、cmd_register指令解析错误，应该解析为旧水冷的命令
+ * 2、旧液冷没有启停水泵和压缩机的功能
+ */
 static void modbus_06_Receivefunction(uint16_t CMD_register, uint8_t value)
 {
 	switch(CMD_register){
-		case 0x2003: //设置温度
-			TMSOperateSetTemp(value);
-		break;
-		
-		case 0x2031: //启停控制程序
+		// case 0x2031: 
+		case 0x0000:	// 启停控制程序
 			if (value)
 			{
 				TMSOperateSystemON();
 			}else{
 				TMSOperateSystemOFF();
 			}
-			
 		break;
 		
-		case 0x203C: //启停液泵
-			if (value)
-			{
-				TMSOperatePumpStart();
-			}else{
-				TMSOperatePumpStop();
-			}
+		// case 0x2003: //设置温度
+		case 0x0005: //设置温度
+			TMSOperateSetTemp(value);
 		break;
 		
-		case 0x203D: //启停压缩机
-			if (value)
-			{
-				TMSOperateCompressorStart();
-			}else{
-				TMSOperateCompressorStop();
-			}
 		break;
+		
+		// case 0x203C: //启停液泵
+		// 	if (value)
+		// 	{
+		// 		TMSOperatePumpStart();
+		// 	}else{
+		// 		TMSOperatePumpStop();
+		// 	}
+		// break;
+		
+		// case 0x203D: //启停压缩机
+		// 	if (value)
+		// 	{
+		// 		TMSOperateCompressorStart();
+		// 	}else{
+		// 		TMSOperateCompressorStop();
+		// 	}
+		// break;
 	}
 }
 
+/**
+ * @brief 设置所有寄存器内容
+ * @todo 
+ * 1、代码实际数据未处理
+ * 2、提取液冷模块实际需要的数据配置到响应寄存器中
+ * 3、设置响应状态位
+ */
 static void modbus_10_Receivefunction()
 {
 	TMS_Handle->CMDCode = CoolingSetAll;
@@ -223,7 +239,10 @@ static void modbus_10_Receivefunction()
 
 /**
  * @brief 
- * @todo 接收到tms指令后，更新指令携带信息到tmsmodbus结构中，置位标志位，通知主程序执行回传和下发
+ * @todo 
+ * 	1、接收到tms指令后，更新指令携带信息到tmsmodbus结构中，
+ * 	2、置位标志位，
+ * 	3、通知主程序执行回传和下发
  */
 static void TMSModbus_service(){
 	uint16_t data_CRC_value;   
