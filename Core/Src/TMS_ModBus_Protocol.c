@@ -146,6 +146,16 @@ static void	updataPSD(){
 	
 }
 
+/**
+ * @brief modbus收到信息后回传消息
+ * 
+ * @param len 回传报文长度
+ */
+static void reportAPK(uint8_t len){
+	copyArray(TMS_USART_RX_BUF, TMS_modbus_Tx_buff,len);
+	send_data(TMS_modbus_Tx_buff,len);
+}
+
 static void TMSOperateSystemON(){
 	TMS_Handle->CMDCode = CoolingCMDStart;
 }
@@ -173,7 +183,7 @@ static void TMSOperateSetTemp(uint8_t value){
 
 }
 
-static void modbus_03_Receivefunction( )
+static void modbus_03_Receivefunction(uint8_t lenth)
 {
 	TMSOperateGetData();
 }
@@ -182,10 +192,10 @@ static void modbus_03_Receivefunction( )
  * @brief 解析06码控制
  * 
  * @todo
- * 1、cmd_register指令解析错误，应该解析为旧水冷的命令
- * 2、旧液冷没有启停水泵和压缩机的功能
+ * 1、解析后直接回传
+ * 2、简易版，解析数据后直接回传
  */
-static void modbus_06_Receivefunction(uint16_t CMD_register, uint8_t value)
+static void modbus_06_Receivefunction(uint16_t CMD_register, uint8_t value,uint8_t lenth)
 {
 	switch(CMD_register){
 		// case 0x2031: 
@@ -203,7 +213,6 @@ static void modbus_06_Receivefunction(uint16_t CMD_register, uint8_t value)
 			TMSOperateSetTemp(value);
 		break;
 		
-		break;
 		
 		// case 0x203C: //启停液泵
 		// 	if (value)
@@ -223,17 +232,32 @@ static void modbus_06_Receivefunction(uint16_t CMD_register, uint8_t value)
 		// 	}
 		// break;
 	}
+
+	reportAPK(lenth);
 }
 
 /**
  * @brief 设置所有寄存器内容
+ * {0xAA, 0x10, 0x00, 0x00, 0x00, 0x09, 0x12, 0x00, 0x01, 	\
+	0x00, 0x64, 0x00, 0x01, 0x00, 0x05, 0x00, 0x00, 0x02, 	\
+	0x58, 0x03, 0x20, 0x03, 0x20, 0x01, 0xF4, 0x6A, 0x21}; //开机指令，目标温度10度
  * @todo 
  * 1、代码实际数据未处理
  * 2、提取液冷模块实际需要的数据配置到响应寄存器中
  * 3、设置响应状态位
  */
-static void modbus_10_Receivefunction()
+static void modbus_10_Receivefunction(uint8_t lenth)
 {
+	uint16_t value;
+	uint16_t * ptr;
+	
+	for (size_t i = 0; i < 20; i++)
+	{
+		value = (uint16_t)((TMS_USART_RX_BUF[i * 2  + 3 ] << 8) | TMS_USART_RX_BUF[i * 2 + 3 + 1]);
+		ptr = (uint16_t*)&(TMS_Handle->modbusReport);
+		ptr[i] = value;
+	}
+	reportAPK(lenth);
 	TMS_Handle->CMDCode = CoolingSetAll;
 }
 
@@ -264,18 +288,18 @@ static void TMSModbus_service(){
 				{
 					case 03: 
 					{
-						modbus_03_Receivefunction();
+						modbus_03_Receivefunction(data_len);
 						break;
 					}
 					case 06: 
 					{
-						modbus_06_Receivefunction(CMD_register,value);
+						modbus_06_Receivefunction(CMD_register,value,data_len);
 						
 						break;
 					}
 					case 10: 
 					{
-						modbus_10_Receivefunction();
+						modbus_10_Receivefunction(data_len);
 						
 						break;
 					}
