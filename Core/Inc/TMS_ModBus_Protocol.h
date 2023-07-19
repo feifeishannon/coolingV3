@@ -99,13 +99,11 @@ typedef struct
     TMS_FunStatusTypeDef (* Stop)();       /*!< 停止液冷控制器     */      
     void (* RxCplt)();                      /*!< 液冷控制器接收数据处理     */      
     TMS_FunStatusTypeDef (* UpdataPack)();                  /*!< 通过串口发送modbus命令更新液冷数据寄存器   */      
+    void (* reportAll)();                  /*!< 通过串口发送modbus命令更新液冷数据寄存器   */      
     
 } TMS_HandleTypeDef;
 
 extern TMS_HandleTypeDef* TMS_Handle; //液冷控制器单例对象
 TMS_FunStatusTypeDef TMSCreate( UART_HandleTypeDef *huartTMS);
 
-
-
 #endif /* __TMS_MODBUS_PROTOCOL_H */
-

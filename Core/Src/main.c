@@ -131,11 +131,13 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   
 }
 
+
 /**
- * @brief 降水冷控制器的数据更新到tms控制器中
+ * @brief 将水冷控制器的数据更新到tms控制器中
+ *  当前液冷能提供给tms的只有运行状态、设定温度、当前温度这三部分
  * 
  */
-void tms_report_updata(){
+void coolingData2TMS_Data(){
   TMS_Handle->modbusReport.TMSRunState = 
                         Cooling_Handle->
                         modbusReport.CoolingRunningState & 0x0080;
@@ -147,12 +149,13 @@ void tms_report_updata(){
                         modbusReport.WaterTankTemperature;
   TMS_Handle->modbusReport.PSD = 
                         (Cooling_Handle->
-                        modbusReport.CoolingRunningState& 0x0080) << 8;
+                        modbusReport.CoolingRunningState& 0x0080);
 }
 
 
 /**
- * @brief 处理TMS发送来的所有指令，根据指令回复相应的数据，并设置水冷的具体控制内容
+ * @brief 液冷控制器和tms控制器指令交互模块
+ *        处理TMS发送来的所有指令，根据指令回复相应的数据，并设置水冷的具体控制内容
  *        处理完一次任务后清空控制标志，等待新任务。
  * 
  * @todo: 需处理CMDCodeDef中所有控制量
@@ -188,8 +191,7 @@ void cooling_CMDfun(){
     // 接收到获取信息指令，将水冷信息回传给TMS
     case CoolingGetData:
       printfln("CoolingGetData");
-      tms_report_updata();
-      TMS_Handle->
+      TMS_Handle->reportAll();
       TMS_Handle->CMDCode = CoolingWait;
 
     break;
@@ -310,6 +312,7 @@ int main(void)
   {
     if (counter++ % 1000){
       cooling_CMDfun();
+      coolingData2TMS_Data();
 
     }
 

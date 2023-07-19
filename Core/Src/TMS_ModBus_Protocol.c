@@ -47,13 +47,20 @@ TMS_HandleTypeDef* TMS_Handle;
 // 									0x58, 0x03, 0x20, 0x03, 0x20, 0x01, 0xF4, 0x00, 0x00}; //开机指令，目标温度10度
 // 									// 校验结果是6A21 
 
-uint8_t TMS_modbus_slave_addr = 0x01; // 长流水冷机地址
+uint8_t TMS_modbus_slave_addr = 0xAA; // 
 uint8_t TMS_modbus_Tx_buff[100];	  // 发送缓冲区
 
 uint16_t targetTemp = 0;
 
-void copyArray(int source[], int target[], int length) {
-    memcpy(target, source, length * sizeof(int));
+/**
+ * @brief 拷贝寄存器数据
+ * 			
+ * @param source 
+ * @param target 
+ * @param length 
+ */
+void copyArray(uint8_t source[], uint8_t target[], uint8_t length) {
+    memcpy(target, source, length);
 }
 
 uint8_t auchCRCHi[] = {
@@ -147,7 +154,23 @@ static void	updataPSD(){
 }
 
 /**
- * @brief modbus收到信息后回传消息
+ * @brief 回传所有寄存器信息
+ * 
+ */
+static void reportAll(){
+	uint16_t CRCvlaue = 0;
+	// 将10码所需所有数据复制到发送缓冲区
+	//@todo: 需验证copy功能是否完整的转移液冷控制器
+	copyArray(TMS_USART_RX_BUF, (uint8_t *)&(TMS_Handle->modbusReport),27);
+	// 发送数据需根据现有内容做crc
+	CRCvlaue = CRC16(TMS_USART_RX_BUF, 25);
+	TMS_USART_RX_BUF[25] = (CRCvlaue)&0xFF;
+	TMS_USART_RX_BUF[26] = (CRCvlaue >> 8) & 0xFF;
+	send_data(TMS_modbus_Tx_buff,27);
+}
+
+/**
+ * @brief modbus收到信息后回传接收到的信息
  * 
  * @param len 回传报文长度
  */
@@ -238,22 +261,23 @@ static void modbus_06_Receivefunction(uint16_t CMD_register, uint8_t value,uint8
 
 /**
  * @brief 设置所有寄存器内容
- * {0xAA, 0x10, 0x00, 0x00, 0x00, 0x09, 0x12, 0x00, 0x01, 	\
-	0x00, 0x64, 0x00, 0x01, 0x00, 0x05, 0x00, 0x00, 0x02, 	\
-	0x58, 0x03, 0x20, 0x03, 0x20, 0x01, 0xF4, 0x6A, 0x21}; //开机指令，目标温度10度
+ * {0xAA, 0x10, 0x00, 0x00, 0x00, 0x09, 0x12, //数据头 7字节
+	0x00, 0x01,	0x00, 0x64, 0x00, 0x01, 0x00, //14
+	0x05, 0x00, 0x00, 0x02,	0x58, 0x03, 0x2 0, //21
+	0x03, 0x20, 0x01, 0xF4, 0x6A, 0x21}; //27开机指令，目标温度10度
  * @todo 
  * 1、代码实际数据未处理
- * 2、提取液冷模块实际需要的数据配置到响应寄存器中
- * 3、设置响应状态位
+ * 2、提取液冷模块实际需要的数据配置到相应寄存器中
+ * 3、设置相应状态位
  */
 static void modbus_10_Receivefunction(uint8_t lenth)
 {
 	uint16_t value;
 	uint16_t * ptr;
 	
-	for (size_t i = 0; i < 20; i++)
+	for (size_t i = 0; i < 9;i++ )
 	{
-		value = (uint16_t)((TMS_USART_RX_BUF[i * 2  + 3 ] << 8) | TMS_USART_RX_BUF[i * 2 + 3 + 1]);
+		value = (uint16_t)((TMS_USART_RX_BUF[i * 2 + 7] << 8) | TMS_USART_RX_BUF[i * 2 + 7 + 1]);
 		ptr = (uint16_t*)&(TMS_Handle->modbusReport);
 		ptr[i] = value;
 	}
@@ -277,7 +301,7 @@ static void TMSModbus_service(){
 	if (TMS_USART_RX_STA & 0x8000){
 		data_len = TMS_USART_RX_STA & 0x3fff;															 
 		CRC_check_result = CRC16(TMS_USART_RX_BUF, data_len - 2);
-		data_CRC_value = TMS_USART_RX_BUF[data_len - 2] << 8 | (((uint16_t)TMS_USART_RX_BUF[data_len - 1])); 
+		data_CRC_value = TMS_USART_RX_BUF[data_len - 1] << 8 | (((uint16_t)TMS_USART_RX_BUF[data_len - 2])); 
 		CMD_register = ((uint16_t)TMS_USART_RX_BUF[2]<<8) | ((uint16_t)TMS_USART_RX_BUF[3]);
 		value = (uint16_t)TMS_USART_RX_BUF[4] << 8 | ((uint16_t)TMS_USART_RX_BUF[5]);
 		if (CRC_check_result == data_CRC_value)
@@ -297,7 +321,7 @@ static void TMSModbus_service(){
 						
 						break;
 					}
-					case 10: 
+					case 0x10: 
 					{
 						modbus_10_Receivefunction(data_len);
 						
@@ -390,6 +414,8 @@ TMS_FunStatusTypeDef TMSCreate( UART_HandleTypeDef *huartTMS)
 	TMS_Handle->Init			= Init;
 	TMS_Handle->UpdataPack		= UpdataPack;
 	TMS_Handle->RxCplt			= RxCplt;
+	TMS_Handle->reportAll		= reportAll;
+	
 	
 	TMS_Handle->huart = huartTMS;
 	HAL_UART_Receive_IT(TMS_Handle->huart, (uint8_t *)TMS_aRxBuffer, 1);
