@@ -398,7 +398,10 @@ static TMS_FunStatusTypeDef UpdataPack(){
 	return TMS_OK;
 }
 
-
+static void initRegister(){
+	TMS_Handle->targetTemperature = 10.0f;
+	TMS_Handle->CMDCode = CoolingCMDStart;
+}
 /**
  * @brief TMS控制器注册函数
  *        绑定所需结构函数
@@ -419,6 +422,7 @@ TMS_FunStatusTypeDef TMSCreate( UART_HandleTypeDef *huartTMS)
 	
 	TMS_Handle->huart = huartTMS;
 	HAL_UART_Receive_IT(TMS_Handle->huart, (uint8_t *)TMS_aRxBuffer, 1);
+	initRegister();
 	
 	return TMS_OK;
 }

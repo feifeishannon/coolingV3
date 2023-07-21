@@ -26,9 +26,6 @@ typedef unsigned int       uint32_t;
 typedef unsigned long long uint64_t;
 
 
-uint8_t BAT_DATA_Pack = 0;
-
-
 uint8_t CoolingRecvBuf[50] = {0};    //接收BUF
 uint8_t CoolingSendBuf[50] = {0};    //发送BUF
 uint8_t CoolingDataBuf[50] = {0};    //水冷数据BUF
@@ -309,8 +306,10 @@ static void CoolingWorkCMD(){
 	 */
 		CoolingCount++;
 		//判断液冷控制器输出寄存器状态，根据状态发送控制指令
-		if(Cooling_Handle->CMD_Pack.CoollingTargetTemp != Cooling_Handle->modbusReport.TargetTemperature) {
-			CoolingOperate(SYSTEM_SET_TEMP_DATA,Cooling_Handle->CMD_Pack.CoollingTargetTemp);
+		if(Cooling_Handle->CMD_Pack.CoollingTargetTemp != 
+			Cooling_Handle->modbusReport.TargetTemperature) {
+			CoolingOperate(SYSTEM_SET_TEMP_DATA,
+							Cooling_Handle->CMD_Pack.CoollingTargetTemp);
 		}
 
 	break;
@@ -332,53 +331,43 @@ static void CoolingWorkCMD(){
  * @param  
  */
 static Cooling_FunStatusTypeDef Run(){
-	// BAT_DATA_Pack的初值受S485信号通讯控制,当信号为1时启动开机指令
-    
 	#ifdef USB_DEBUG
 		// printfln("CoolingWorkStatus:%d",CoolingWorkStatus);
 	#endif
 	
-    if(BAT_DATA_Pack  > 0){
-        switch(CoolingWorkStatus){
-			case Cooling_STOP:
-			{//关机状态下发送开机指令
-				CoolingWorkStatus = Cooling_GET_STATE;
-				CoolingOperate(SYSTEM_ON,NULL);
-				break;
-			}
-			case Cooling_GET_STATE:
-			{//读取液冷所有寄存器数值
-				CoolingWorkStatus = Cooling_CHECK;
-				CoolingOperate(SYSTEM_GET_ALL_DATA,NULL);
-				break;
-			}
-			case Cooling_CHECK:
-			{//判定水冷工作状态，正常开机继续执行，异常开机返回0步骤
-				if(Cooling_Handle->Cooling_PSD.CoolingRunState == 1)
-				{
-					CoolingWorkStatus = Cooling_CMD;
-				}
-				else
-				{
-					CoolingWorkStatus = Cooling_STOP;
-				}
-				break;
-			}
-			case Cooling_CMD:
-			{//水冷控制
-				CoolingWorkCMD();
-				break;
-			}
-			default:
-				break;
+	switch(CoolingWorkStatus){
+		case Cooling_STOP:
+		{//关机状态下发送开机指令
+			CoolingWorkStatus = Cooling_GET_STATE;
+			CoolingOperate(SYSTEM_ON,NULL);
+			break;
 		}
+		case Cooling_GET_STATE:
+		{//读取液冷所有寄存器数值
+			CoolingWorkStatus = Cooling_CHECK;
+			CoolingOperate(SYSTEM_GET_ALL_DATA,NULL);
+			break;
+		}
+		case Cooling_CHECK:
+		{//判定水冷工作状态，正常开机继续执行，异常开机返回0步骤
+			if(Cooling_Handle->Cooling_PSD.CoolingRunState == 1)
+			{
+				CoolingWorkStatus = Cooling_CMD;
+			}
+			else
+			{
+				CoolingWorkStatus = Cooling_STOP;
+			}
+			break;
+		}
+		case Cooling_CMD:
+		{//水冷控制
+			CoolingWorkCMD();
+			break;
+		}
+		default:
+			break;
 	}
-	else
-	{
-		CoolingWorkStatus = Cooling_STOP;
-		CoolingOperate(SYSTEM_OFF,NULL);
-	
-    }
 	return Cooling_OK;
 }
 
@@ -401,7 +390,6 @@ static Cooling_FunStatusTypeDef Stop(){
  */
 static Cooling_FunStatusTypeDef Init(){
 	cooling_USART_RX_STA = 0; // 准备接收
-    
 
 	return Cooling_OK;
 }
@@ -415,7 +403,12 @@ static Cooling_FunStatusTypeDef UpdataPack(){
 	return Cooling_OK;
 }
 
+static void initRegister(){
+	Cooling_Handle->targetTemperature = 10.0f;
+	Cooling_Handle->modbusReport.TargetTemperature = Cooling_Handle->targetTemperature*100;
+    
 
+}
 /**
  * @brief 液冷控制器注册函数
  *        绑定所需结构函数
@@ -435,7 +428,7 @@ Cooling_FunStatusTypeDef CoolingCreate( UART_HandleTypeDef *huartcooling)
 	Cooling_Handle->huart = huartcooling;
 	HAL_UART_Receive_IT(Cooling_Handle->huart, (uint8_t *)cooling_aRxBuffer, 1);
 	Cooling_Handle->coolingSYSstatus = Cooling_Inited;
-	
+	initRegister();
 	return Cooling_OK;
 }
 

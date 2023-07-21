@@ -139,19 +139,44 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
  */
 void coolingData2TMS_Data(){
   TMS_Handle->modbusReport.TMSRunState = 
-                        Cooling_Handle->
-                        modbusReport.CoolingRunningState & 0x0080;
+                        (Cooling_Handle->
+                        modbusReport.CoolingRunningState & 0x0080) >> 8;
   TMS_Handle->modbusReport.TargetTemperature = 
-                        Cooling_Handle->
-                        modbusReport.TargetTemperature;
+                        (Cooling_Handle->
+                        modbusReport.TargetTemperature / 100 + 50) *10;
   TMS_Handle->modbusReport.OutletTemperature = 
-                        Cooling_Handle->
-                        modbusReport.WaterTankTemperature;
+                        (Cooling_Handle->
+                        modbusReport.WaterTankTemperature / 100 + 50) *10;
   TMS_Handle->modbusReport.PSD = 
                         (Cooling_Handle->
                         modbusReport.CoolingRunningState& 0x0080);
 }
 
+void SetCoollingTemperature(uint16_t temperature){
+  Cooling_Handle->CMD_Pack.CoollingTargetTemp = temperature ; 
+
+}
+
+/**
+ * @brief 将tms控制器的数据更新到水冷控制器中
+ *  当前液冷能提供给tms的只有运行状态、设定温度、当前温度这三部分
+ * 
+ */
+void TMS_Data2cooling_Data(){
+  if (TMS_Handle->modbusReport.TMSRunState)
+  {
+    Cooling_Handle->modbusReport.CoolingRunningState |= 0x80;
+  }else{
+    Cooling_Handle->modbusReport.CoolingRunningState &= 0x7F;
+  }
+  
+  Cooling_Handle->modbusReport.TargetTemperature = 
+                        (TMS_Handle->
+                        modbusReport.TargetTemperature / 10 - 50)*100;
+  Cooling_Handle->modbusReport.WaterTankTemperature = 
+                        (TMS_Handle->
+                        modbusReport.OutletTemperature / 10 - 50)*100;
+}
 
 /**
  * @brief 液冷控制器和tms控制器指令交互模块
@@ -182,7 +207,7 @@ void cooling_CMDfun(){
     case CoolingSetTemp:
       //@TODO: 将TMS_Handle的温度转码为Cooling_Handle可用形式并设置
       printfln("CoolingSetTemp");
-      Cooling_Handle->CMD_Pack.CoollingTargetTemp = TMS_Handle->targetTemperature * 100; 
+      SetCoollingTemperature(TMS_Handle->targetTemperature * 100);
       TMS_Handle->CMDCode = CoolingWait;
 
     break;
@@ -231,9 +256,15 @@ void cooling_CMDfun(){
     // 接收设置所有寄存器指令
     case CoolingSetAll:
       printfln("CoolingSetAll");
-
-      TMS_Handle->CMDCode = CoolingWait;
-
+      TMS_Data2cooling_Data();
+      SetCoollingTemperature(TMS_Handle->targetTemperature * 100);
+      if (TMS_Handle->modbusReport.TMSRunState)
+      {
+        TMS_Handle->CMDCode = CoolingCMDStart;
+      }else {
+        TMS_Handle->CMDCode = CoolingCMDStop;
+      }
+      
     break;
 
 		case CoolingWait:
@@ -243,6 +274,9 @@ void cooling_CMDfun(){
     
   }
 }
+
+
+
 
 
 /* USER CODE END 0 */
@@ -300,7 +334,6 @@ int main(void)
 
   CoolingCreate(&huart7);
   TMSCreate(&huart2);
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -310,7 +343,7 @@ int main(void)
   uint16_t counter = 0;
   while (1)
   {
-    if (counter++ % 1000){
+    if (counter++ % 1000==0){
       cooling_CMDfun();
       coolingData2TMS_Data();
 

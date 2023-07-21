@@ -17,7 +17,6 @@ typedef unsigned int       uint32_t; 		// 消除vscode异常提示
 #define USART_REC_LEN  			200  		// 定义最大接收字节数 200
 #define RXBUFFERSIZE            1           // 缓存大小
 
-extern uint8_t BAT_DATA_Pack;
 
 typedef enum
 {

@@ -292,9 +292,9 @@ void TIM6_DAC_IRQHandler(void)
   /* USER CODE BEGIN TIM6_DAC_IRQn 0 */
   static uint32_t eventTimer = 0;
   if ((eventTimer++) % 200 == 0){
-    Cooling_Handle->Run(BAT_DATA_Pack);
+    Cooling_Handle->Run();
     Cooling_Handle->UpdataPack();
-    TMS_Handle->Run(BAT_DATA_Pack);
+    TMS_Handle->Run();
     HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_2);
     
   }
