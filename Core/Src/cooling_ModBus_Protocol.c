@@ -294,9 +294,11 @@ static void CoolingWorkCMD(){
 		//判断液冷控制器输出寄存器状态，根据状态发送控制指令
 		//@todo 需增加状态变动监测，当有状态变化时才执行状态控制
 		if(Cooling_Handle->CMD_Pack.CoollingCMD == 0) {
-			CoolingOperate(SYSTEM_OFF,NULL);
+			if(Cooling_Handle->Cooling_PSD.CoolingRunState == 1)
+				CoolingOperate(SYSTEM_OFF,NULL);
 		}else{
-			CoolingOperate(SYSTEM_ON,NULL);
+			if(Cooling_Handle->Cooling_PSD.CoolingRunState == 0)
+				CoolingOperate(SYSTEM_ON,NULL);
 		}
 	break;
 	
@@ -406,7 +408,7 @@ static Cooling_FunStatusTypeDef UpdataPack(){
 static void initRegister(){
 	Cooling_Handle->targetTemperature = 10.0f;
 	Cooling_Handle->modbusReport.TargetTemperature = Cooling_Handle->targetTemperature*100;
-    
+    Cooling_Handle->CMD_Pack.CoollingTargetTemp = Cooling_Handle->modbusReport.TargetTemperature ; 
 
 }
 /**

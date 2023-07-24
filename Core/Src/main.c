@@ -140,7 +140,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 void coolingData2TMS_Data(){
   TMS_Handle->modbusReport.TMSRunState = 
                         (Cooling_Handle->
-                        modbusReport.CoolingRunningState & 0x0080) >> 8;
+                        modbusReport.CoolingRunningState & 0x0080) >> 7;
   TMS_Handle->modbusReport.TargetTemperature = 
                         (Cooling_Handle->
                         modbusReport.TargetTemperature / 100 + 50) *10;
@@ -153,8 +153,11 @@ void coolingData2TMS_Data(){
 }
 
 void SetCoollingTemperature(uint16_t temperature){
-  Cooling_Handle->CMD_Pack.CoollingTargetTemp = temperature ; 
+  Cooling_Handle->CMD_Pack.CoollingTargetTemp = temperature; 
+}
 
+void upadaTMSData(){
+  TMS_Handle->targetTemperature = (TMS_Handle->modbusReport.TargetTemperature / 10 - 50.0f);
 }
 
 /**
@@ -257,6 +260,7 @@ void cooling_CMDfun(){
     case CoolingSetAll:
       printfln("CoolingSetAll");
       TMS_Data2cooling_Data();
+      upadaTMSData();
       SetCoollingTemperature(TMS_Handle->targetTemperature * 100);
       if (TMS_Handle->modbusReport.TMSRunState)
       {

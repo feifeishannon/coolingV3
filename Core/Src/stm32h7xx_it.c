@@ -291,7 +291,7 @@ void TIM6_DAC_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM6_DAC_IRQn 0 */
   static uint32_t eventTimer = 0;
-  if ((eventTimer++) % 200 == 0){
+  if ((eventTimer++) % 400 == 0){
     Cooling_Handle->Run();
     Cooling_Handle->UpdataPack();
     TMS_Handle->Run();
