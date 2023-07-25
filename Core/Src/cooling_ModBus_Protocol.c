@@ -276,7 +276,7 @@ static void CoolingWorkCMD(){
 		break;
 	
 	case 1/* 检测液冷状态是否为开机状态，不为开机状态将液冷设置为关机状态,供主状态机执行关机指令 */:
-	//@todo: 确定是否保留此需求，需匹配液冷控制器对应的寄存器位
+	//
 		/* code */
 		CoolingCount++;
 		#ifdef USB_DEBUG
@@ -292,7 +292,7 @@ static void CoolingWorkCMD(){
 	case 2/* 设置制冷控制器工作状态 */:
 		CoolingCount++;
 		//判断液冷控制器输出寄存器状态，根据状态发送控制指令
-		//@todo 需增加状态变动监测，当有状态变化时才执行状态控制
+		//
 		if(Cooling_Handle->CMD_Pack.CoollingCMD == 0) {
 			if(Cooling_Handle->Cooling_PSD.CoolingRunState == 1)
 				CoolingOperate(SYSTEM_OFF,NULL);
@@ -303,8 +303,7 @@ static void CoolingWorkCMD(){
 	break;
 	
 	case 3/* 设置制冷温度 */:
-	/**@TODO:   
-	 * 1、
+	/**
 	 */
 		CoolingCount++;
 		//判断液冷控制器输出寄存器状态，根据状态发送控制指令
@@ -376,7 +375,7 @@ static Cooling_FunStatusTypeDef Run(){
 /**
  * @brief 液冷控制器停止函数
  *        
- * @todo  暂时无用
+ * 
  * @param hcooling 
  */
 static Cooling_FunStatusTypeDef Stop(){
@@ -387,7 +386,7 @@ static Cooling_FunStatusTypeDef Stop(){
 /**
  * @brief 液冷控制器初始化函数
  *        
- * @todo  初始化所需数据,读取版本号
+ * 
  *  
  */
 static Cooling_FunStatusTypeDef Init(){
@@ -414,7 +413,7 @@ static void initRegister(){
 /**
  * @brief 液冷控制器注册函数
  *        绑定所需结构函数
- * @todo  串口绑定方式待定
+ * 
  * @param huartcooling:绑定收发数据接口
  */
 Cooling_FunStatusTypeDef CoolingCreate( UART_HandleTypeDef *huartcooling)

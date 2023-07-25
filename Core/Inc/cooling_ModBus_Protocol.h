@@ -106,6 +106,7 @@ typedef struct
 } Cooling_ChangLiu_PSD_TypeDef;
 #pragma pack()
 
+#pragma pack(1)
 
 /**
  * @brief 实体调试需判定对齐规则
@@ -129,6 +130,7 @@ typedef struct
     Cooling_FunStatusTypeDef (* UpdataPack)();                  /*!< 通过串口发送modbus命令更新液冷数据寄存器   */      
     
 } Cooling_HandleTypeDef;
+#pragma pack()
 
 extern Cooling_HandleTypeDef* Cooling_Handle; //液冷控制器单例对象
 Cooling_FunStatusTypeDef CoolingCreate( UART_HandleTypeDef *huartcooling);

@@ -237,9 +237,7 @@ static void modbus_03_Receivefunction(uint8_t lenth)
 /**
  * @brief 解析06码控制
  * 
- * @todo
- * 1、解析后直接回传
- * 2、简易版，解析数据后直接回传
+ * 
  */
 static void modbus_06_Receivefunction(uint16_t CMD_register, uint8_t value,uint8_t lenth)
 {
@@ -298,6 +296,7 @@ static void modbus_10_Receivefunction(uint8_t lenth)
 	
 	for (size_t i = 0; i < 9;i++ )
 	{
+		
 		value = (uint16_t)((TMS_USART_RX_BUF[i * 2 + 7] << 8) | TMS_USART_RX_BUF[i * 2 + 7 + 1]);
 		ptr = (uint16_t*)&(TMS_Handle->modbusReport);
 		ptr[i] = value;
@@ -309,10 +308,8 @@ static void modbus_10_Receivefunction(uint8_t lenth)
 
 /**
  * @brief 
- * @todo 
- * 	1、接收到tms指令后，更新指令携带信息到tmsmodbus结构中，
- * 	2、置位标志位，
- * 	3、通知主程序执行回传和下发
+ * 
+ * 	
  */
 static void TMSModbus_service(){
 	uint16_t data_CRC_value;   
@@ -390,7 +387,7 @@ static TMS_FunStatusTypeDef Run(){
 /**
  * @brief TMS控制器停止函数
  *        
- * @todo  暂时无用
+ * 
  * @param hTMS 
  */
 static TMS_FunStatusTypeDef Stop(){
@@ -401,7 +398,7 @@ static TMS_FunStatusTypeDef Stop(){
 /**
  * @brief TMS控制器初始化函数
  *        
- * @todo  初始化所需数据,读取版本号
+ *
  *  
  */
 static TMS_FunStatusTypeDef Init(){
@@ -427,7 +424,7 @@ static void initRegister(){
 /**
  * @brief TMS控制器注册函数
  *        绑定所需结构函数
- * @todo  串口绑定方式待定
+ *
  * @param huartTMS:绑定收发数据接口
  */
 TMS_FunStatusTypeDef TMSCreate( UART_HandleTypeDef *huartTMS)

@@ -79,6 +79,7 @@ typedef struct
 } TMS_PSD_TypeDef;
 #pragma pack()
 
+#pragma pack(1)
 
 /**
  * @brief 实体调试需判定对齐规则
@@ -102,6 +103,7 @@ typedef struct
     void (* reportAll)();                  /*!< 通过串口发送modbus命令更新液冷数据寄存器   */      
     
 } TMS_HandleTypeDef;
+#pragma pack()
 
 extern TMS_HandleTypeDef* TMS_Handle; //液冷控制器单例对象
 TMS_FunStatusTypeDef TMSCreate( UART_HandleTypeDef *huartTMS);

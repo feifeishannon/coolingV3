@@ -141,9 +141,9 @@ void coolingData2TMS_Data(){
   TMS_Handle->modbusReport.TMSRunState = 
                         (Cooling_Handle->
                         modbusReport.CoolingRunningState & 0x0080) >> 7;
-  TMS_Handle->modbusReport.TargetTemperature = 
-                        (Cooling_Handle->
-                        modbusReport.TargetTemperature / 100 + 50) *10;
+  // TMS_Handle->modbusReport.TargetTemperature = 
+  //                       (Cooling_Handle->
+  //                       modbusReport.TargetTemperature / 100 + 50) *10;
   TMS_Handle->modbusReport.OutletTemperature = 
                         (Cooling_Handle->
                         modbusReport.WaterTankTemperature / 100 + 50) *10;
@@ -175,10 +175,10 @@ void TMS_Data2cooling_Data(){
   
   Cooling_Handle->modbusReport.TargetTemperature = 
                         (TMS_Handle->
-                        modbusReport.TargetTemperature / 10 - 50)*100;
+                        modbusReport.TargetTemperature  - 500 ) / 10*100;
   Cooling_Handle->modbusReport.WaterTankTemperature = 
                         (TMS_Handle->
-                        modbusReport.OutletTemperature / 10 - 50)*100;
+                        modbusReport.OutletTemperature - 500 ) / 10*100;
 }
 
 /**
@@ -257,6 +257,8 @@ void cooling_CMDfun(){
     break;
 
     // 接收设置所有寄存器指令
+    //@todo: 设置完所有寄存器后为什么状态改为start，cooling中会执行顶层开机指令
+    //@todo: 接收完数据后应该判断变化数据，让cooling设置发生变化的寄存器值
     case CoolingSetAll:
       printfln("CoolingSetAll");
       TMS_Data2cooling_Data();
