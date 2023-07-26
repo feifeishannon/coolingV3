@@ -290,6 +290,7 @@ static void updata(){
 	TMS_Handle->targetTemperature = 
 		(float)(TMS_Handle->modbusReport.TargetTemperature/10-50);
 }
+
 /**
  * @brief 设置所有寄存器内容
  * {0xAA, 0x10, 0x00, 0x00, 0x00, 0x09, 0x12, //数据头 7字节

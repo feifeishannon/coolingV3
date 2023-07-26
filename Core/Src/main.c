@@ -248,14 +248,8 @@ void cooling_CMDfun(){
     case CoolingSetAll:
       printfln("CoolingSetAll");
       TMS_Data2cooling_Data();  // 根据TMS控制器的数据状态更新液冷控制器的对应寄存器
-      SetCoollingTemperature(TMS_Handle->targetTemperature * 100);
-      if (TMS_Handle->modbusReport.TMSRunState)
-      {
-        TMS_Handle->CMDCode = CoolingCMDStart;
-      }else {
-        TMS_Handle->CMDCode = CoolingCMDStop;
-      }
-      
+      TMS_Handle->CMDCode = CoolingWait;
+
     break;
 
 		case CoolingWait:
