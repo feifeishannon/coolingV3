@@ -287,7 +287,7 @@ static void modbus_06_Receivefunction(uint16_t CMD_register, uint8_t value,uint8
 	0x05, 0x00, 0x00, 0x02,	0x58, 0x03, 0x2 0, //21
 	0x03, 0x20, 0x01, 0xF4, 0x6A, 0x21}; //27开机指令，目标温度10度
  * @todo 
- * 1、数据同步错误，待查明原因，先用直接赋值方式代替
+ * 同步接收数据到寄存器中
  */
 static void modbus_10_Receivefunction(uint8_t lenth)
 {
@@ -301,6 +301,7 @@ static void modbus_10_Receivefunction(uint8_t lenth)
 		ptr = (uint16_t*)&(TMS_Handle->modbusReport);
 		ptr[i] = value;
 	}
+	updata();
 	reportAPK(lenth);
 
 	TMS_Handle->CMDCode = CoolingSetAll;

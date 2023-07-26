@@ -35,7 +35,7 @@ typedef enum
     CoolingCompressorStart  = 0x07, //  启动压缩机
     CoolingSetAll           = 0x08, //  设置所有参数
     CoolingWait             = 0xff  //  待机，等待新指令
-} CMDCodeDef;//水冷控制器状态机定义
+} CMDCodeDef;//水冷控制器状态机定义 以此判定外部指令
 
 #pragma pack(1)
 typedef struct

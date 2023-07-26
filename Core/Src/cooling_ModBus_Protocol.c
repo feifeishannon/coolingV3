@@ -30,7 +30,7 @@ uint8_t CoolingRecvBuf[50] = {0};    //接收BUF
 uint8_t CoolingSendBuf[50] = {0};    //发送BUF
 uint8_t CoolingDataBuf[50] = {0};    //水冷数据BUF
 
-uint8_t CoolingWorkStatus = 0;       //工作状态
+uint8_t CoolingWorkStatus = 0;       //工作状态	供液冷控制器流程控制
 uint8_t CoolingCount = 0;            //计数器
 uint8_t CoolingRecvCount = 0;        //接收计数器
 uint8_t CoolingSendCount = 0;        //发送计数器
@@ -269,22 +269,24 @@ static void CoolingWorkCMD(){
 		/* code */
 		CoolingCount++;
 		CoolingOperate(SYSTEM_GET_ALL_DATA,NULL);
-		#ifdef USB_DEBUG
-			printfln("CoolingOperate:SYSTEM_GET_STATE_DATA=>%d",Cooling_Handle->Cooling_PSD.CoolingCoolingState);
-		#endif
-		
+		printfln("获取液冷所有寄存器数据");
 		break;
 	
+	/**
+	 * @brief 
+	 * 
+	 * @issue 此处检测有疑问，Cooling_PSD是供外部检测用，CMD_Pack是供内部检测用，
+	 */
 	case 1/* 检测液冷状态是否为开机状态，不为开机状态将液冷设置为关机状态,供主状态机执行关机指令 */:
 	//
 		/* code */
 		CoolingCount++;
-		#ifdef USB_DEBUG
-			printfln("");
-		#endif
+		
 		if(Cooling_Handle->Cooling_PSD.CoolingCoolingState != 1)
 		{
 			CoolingWorkStatus = Cooling_STOP;
+			printfln("检测到液冷状态为停止");
+
 		}
 		break;
 
@@ -293,24 +295,35 @@ static void CoolingWorkCMD(){
 		CoolingCount++;
 		//判断液冷控制器输出寄存器状态，根据状态发送控制指令
 		//
+		
 		if(Cooling_Handle->CMD_Pack.CoollingCMD == 0) {
 			if(Cooling_Handle->Cooling_PSD.CoolingRunState == 1)
 				CoolingOperate(SYSTEM_OFF,NULL);
+				printfln("关闭液冷控制");
+
 		}else{
 			if(Cooling_Handle->Cooling_PSD.CoolingRunState == 0)
 				CoolingOperate(SYSTEM_ON,NULL);
+				printfln("开启液冷控制");
 		}
 	break;
 	
-	case 3/* 设置制冷温度 */:
 	/**
+	 * @brief 当控制寄存器的温度和回包中的目标温度不一致
+	 * 	表明液冷的目标温度已被更新，需要重新设置目标温度寄存器
+	 * 
 	 */
+	case 3/* 设置制冷温度 */:
 		CoolingCount++;
 		//判断液冷控制器输出寄存器状态，根据状态发送控制指令
 		if(Cooling_Handle->CMD_Pack.CoollingTargetTemp != 
 			Cooling_Handle->modbusReport.TargetTemperature) {
 			CoolingOperate(SYSTEM_SET_TEMP_DATA,
 							Cooling_Handle->CMD_Pack.CoollingTargetTemp);
+			#ifdef USB_DEBUG
+				printfln("液冷目标温度被重设:CMD_Pack.CoollingCMD=>%d",Cooling_Handle->CMD_Pack.CoollingTargetTemp);
+			#endif
+		
 		}
 
 	break;
@@ -337,12 +350,12 @@ static Cooling_FunStatusTypeDef Run(){
 	#endif
 	
 	switch(CoolingWorkStatus){
-		case Cooling_STOP:
-		{//关机状态下发送开机指令
-			CoolingWorkStatus = Cooling_GET_STATE;
-			CoolingOperate(SYSTEM_ON,NULL);
-			break;
-		}
+		// case Cooling_STOP:
+		// {//关机状态下发送开机指令
+		// 	CoolingWorkStatus = Cooling_GET_STATE;
+		// 	CoolingOperate(SYSTEM_ON,NULL);
+		// 	break;
+		// }
 		case Cooling_GET_STATE:
 		{//读取液冷所有寄存器数值
 			CoolingWorkStatus = Cooling_CHECK;

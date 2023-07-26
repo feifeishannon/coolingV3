@@ -81,6 +81,10 @@ typedef struct
 } Modbus_ChangLiu_Report_Pack_TypeDef;  // 起始地址：0x2000
 #pragma pack()
 
+/**
+ * @brief 控制寄存器,由TMS设置
+ * 
+ */
 typedef struct
 {
     uint16_t CoollingTargetTemp;    //  03 SP温度设定值
@@ -93,6 +97,11 @@ typedef struct
 #pragma pack()
 
 #pragma pack(1)
+
+/**
+ * @brief 状态寄存器，供TMS读取
+ * 
+ */
 typedef struct
 {
     uint8_t CoolingRunState;            // 开机/关机    7

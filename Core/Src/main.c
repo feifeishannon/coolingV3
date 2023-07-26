@@ -141,9 +141,6 @@ void coolingData2TMS_Data(){
   TMS_Handle->modbusReport.TMSRunState = 
                         (Cooling_Handle->
                         modbusReport.CoolingRunningState & 0x0080) >> 7;
-  // TMS_Handle->modbusReport.TargetTemperature = 
-  //                       (Cooling_Handle->
-  //                       modbusReport.TargetTemperature / 100 + 50) *10;
   TMS_Handle->modbusReport.OutletTemperature = 
                         (Cooling_Handle->
                         modbusReport.WaterTankTemperature / 100 + 50) *10;
@@ -156,29 +153,17 @@ void SetCoollingTemperature(uint16_t temperature){
   Cooling_Handle->CMD_Pack.CoollingTargetTemp = temperature; 
 }
 
-void upadaTMSData(){
-  TMS_Handle->targetTemperature = (TMS_Handle->modbusReport.TargetTemperature / 10 - 50.0f);
-}
-
 /**
  * @brief 将tms控制器的数据更新到水冷控制器中
- *  当前液冷能提供给tms的只有运行状态、设定温度、当前温度这三部分
+ *  配置液冷控制器的目标温度和运行状态，
+ * @issue: 应该将状态配置到输入寄存器中，而不是直接配置modbus回包结构，
+ *        之后再由液冷控制器检测输入寄存器的值是否有变动，有变动后再执行下发配置
  * 
  */
 void TMS_Data2cooling_Data(){
-  if (TMS_Handle->modbusReport.TMSRunState)
-  {
-    Cooling_Handle->modbusReport.CoolingRunningState |= 0x80;
-  }else{
-    Cooling_Handle->modbusReport.CoolingRunningState &= 0x7F;
-  }
-  
-  Cooling_Handle->modbusReport.TargetTemperature = 
-                        (TMS_Handle->
-                        modbusReport.TargetTemperature  - 500 ) / 10*100;
-  Cooling_Handle->modbusReport.WaterTankTemperature = 
-                        (TMS_Handle->
-                        modbusReport.OutletTemperature - 500 ) / 10*100;
+  Cooling_Handle->CMD_Pack.CoollingCMD = TMS_Handle->modbusReport.TMSRunState; // 设置液冷控制器的运行开关
+  Cooling_Handle->CMD_Pack.CoollingTargetTemp = 
+      (TMS_Handle->modbusReport.TargetTemperature- 500 ) / 10*100; // 设置液冷控制器的运行开关
 }
 
 /**
@@ -256,13 +241,13 @@ void cooling_CMDfun(){
 
     break;
 
-    // 接收设置所有寄存器指令
-    //@todo: 设置完所有寄存器后为什么状态改为start，cooling中会执行顶层开机指令
-    //@todo: 接收完数据后应该判断变化数据，让cooling设置发生变化的寄存器值
+    /**
+     * @brief  接收设置所有寄存器指令
+     * @todo 接收寄存器时 tms控制器已经解析了数据信息，此处无需再次解析
+     */
     case CoolingSetAll:
       printfln("CoolingSetAll");
-      TMS_Data2cooling_Data();
-      upadaTMSData();
+      TMS_Data2cooling_Data();  // 根据TMS控制器的数据状态更新液冷控制器的对应寄存器
       SetCoollingTemperature(TMS_Handle->targetTemperature * 100);
       if (TMS_Handle->modbusReport.TMSRunState)
       {
