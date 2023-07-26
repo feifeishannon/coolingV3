@@ -34,10 +34,10 @@ typedef enum
 
 typedef enum
 {
-    Cooling_STOP        = 0x00,
-    Cooling_GET_STATE   = 0x01,
-    Cooling_CHECK       = 0x02,
-    Cooling_CMD         = 0x03
+    Cooling_STOP                = 0x00,
+    Cooling_GET_STATE           = 0x01,
+    Cooling_CHECK_RunState      = 0x02,
+    Cooling_SET_TEMP            = 0x03
 } Cooling_StateTypeDef;//×´Ì¬»ú¶¨Òå
 
 typedef enum
