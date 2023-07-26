@@ -79,6 +79,13 @@ typedef struct
 } TMS_PSD_TypeDef;
 #pragma pack()
 
+typedef struct
+{
+    uint16_t TMSTargetTemp;    //  03 SP温度设定值
+    uint16_t TMSCMD;           //  31 启停控制程序
+    
+} TMS_CMD_Pack_TypeDef;  // 起始地址：0x2000
+
 #pragma pack(1)
 
 /**
@@ -91,6 +98,7 @@ typedef struct
     CMDCodeDef CMDCode;
     UART_HandleTypeDef *huart;
     TMS_PSD_TypeDef TMS_PSD;
+    TMS_CMD_Pack_TypeDef TMS_CMD_Pack;
     float currentTemperature;
     float targetTemperature;
     uint8_t modbus_count;

@@ -281,6 +281,16 @@ static void modbus_06_Receivefunction(uint16_t CMD_register, uint8_t value,uint8
 }
 
 /**
+ * @brief 根据输入数据更新所有输入寄存器
+ * 
+ */
+static void updata(){
+	
+	TMS_Handle->TMS_CMD_Pack.TMSTargetTemp = TMS_Handle->modbusReport.TMSRunState;
+	TMS_Handle->targetTemperature = 
+		(float)(TMS_Handle->modbusReport.TargetTemperature/10-50);
+}
+/**
  * @brief 设置所有寄存器内容
  * {0xAA, 0x10, 0x00, 0x00, 0x00, 0x09, 0x12, //数据头 7字节
 	0x00, 0x01,	0x00, 0x64, 0x00, 0x01, 0x00, //14
