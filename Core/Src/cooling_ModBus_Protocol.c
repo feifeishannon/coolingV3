@@ -30,7 +30,6 @@ uint8_t CoolingRecvBuf[50] = {0};    //接收BUF
 uint8_t CoolingSendBuf[50] = {0};    //发送BUF
 uint8_t CoolingDataBuf[50] = {0};    //水冷数据BUF
 
-Cooling_StateTypeDef CoolingWorkStatus = Cooling_STOP;       //工作状态	供液冷控制器流程控制
 uint8_t CoolingCount = 0;            //计数器
 uint8_t CoolingRecvCount = 0;        //接收计数器
 uint8_t CoolingSendCount = 0;        //发送计数器
@@ -83,6 +82,25 @@ static uint16_t CRC16(unsigned char *data,unsigned char length) {
 	return reg_crc; 
 }
 
+/**
+ * @brief  将Cool的报文温度转为真实温度
+ * @note   
+ * @param  temp: 
+ * @retval 
+ */
+static float temp_uint2float(uint16_t temp){
+	return (float)((temp) / 100);
+}
+/**
+ * @brief  将Cool的真实温度转为报文温度
+ * @note   
+ * @param  temp: 
+ * @retval 
+ */
+static uint16_t temp_float2uint(float temp){
+	return (uint16_t)(temp * 100);
+}
+
 static void send_data(uint8_t *buff, uint8_t len)
 {
 	HAL_UART_Transmit_IT(Cooling_Handle->huart, (uint8_t *)buff, len); // 发送数据   把buff
@@ -124,14 +142,14 @@ static void CoolingOperateGetALL(){
 }
 
 // 设置液冷温度
-static void CoolingOperateSetTemp(uint8_t value){
+static void CoolingOperateSetTemp(uint16_t value){
 	uint16_t crcCheck = 0;
-	aucCoolingTargTempCmd[4] = ((value) * 100) / 256;
-	aucCoolingTargTempCmd[5] = ((value) * 100) % 256;
+	aucCoolingTargTempCmd[4] = ((value) ) / 256;
+	aucCoolingTargTempCmd[5] = ((value) ) % 256;
 	
 	crcCheck = CRC16(aucCoolingTargTempCmd, 6);
-	aucCoolingTargTempCmd[6] = crcCheck / 256;
-	aucCoolingTargTempCmd[7] = crcCheck % 256;
+	aucCoolingTargTempCmd[6] = crcCheck % 256;
+	aucCoolingTargTempCmd[7] = crcCheck / 256;
 
 	send_8data(aucCoolingTargTempCmd);
 
@@ -140,7 +158,7 @@ static void CoolingOperateSetTemp(uint8_t value){
 
 
 
-static void CoolingOperate(Cooling_OperateTypeDef operateCMD, uint8_t value){
+static void CoolingOperate(Cooling_OperateTypeDef operateCMD, uint16_t value){
 	switch(operateCMD)
 	{
         
@@ -200,8 +218,8 @@ static void modbus_03_Receivefunction(uint8_t data_len)
 		ptr[i] = value;
 		
 	}
-	Cooling_Handle->currentTemperature = (float)Cooling_Handle->modbusReport.WaterTankTemperature/100;
-	printfln("当前温度：%f",Cooling_Handle->currentTemperature);
+	Cooling_Handle->currentTemperature = temp_uint2float(Cooling_Handle->modbusReport.WaterTankTemperature);
+	// printfln("当前温度：%f",Cooling_Handle->currentTemperature);
 	updataPSD(&Cooling_Handle->Cooling_PSD, Cooling_Handle->modbusReport.CoolingRunningState);
 }
 
@@ -262,6 +280,7 @@ static void RxCplt(void)
 	
 }
 
+
 /**
  * @brief 	液冷控制器启动函数，液冷状态机
  *        	需要将此函数放入主函数体循环中
@@ -272,7 +291,7 @@ static void RxCplt(void)
  * @param  
  */
 static Cooling_FunStatusTypeDef Run(){
-	switch(CoolingWorkStatus){
+	switch(Cooling_Handle->CoolingWorkStatus){
 		case Cooling_STOP:{//关机状态不执行操作
 		
 			break;
@@ -280,7 +299,7 @@ static Cooling_FunStatusTypeDef Run(){
 		case Cooling_GET_STATE:{//读取液冷所有寄存器数值
 			CoolingOperate(SYSTEM_GET_ALL_DATA,NULL);
 			printfln("获取液冷所有寄存器数据");
-			CoolingWorkStatus++;
+			Cooling_Handle->CoolingWorkStatus++;
 			break;
 		}
 
@@ -293,7 +312,7 @@ static Cooling_FunStatusTypeDef Run(){
 				if(Cooling_Handle->Cooling_PSD.CoolingRunState == 1){
 					CoolingOperate(SYSTEM_OFF,NULL);
 					printfln("关闭液冷控制");
-					CoolingWorkStatus = Cooling_STOP;
+					Cooling_Handle->CoolingWorkStatus = Cooling_STOP;
 					break;
 				}
 			}else{
@@ -302,7 +321,7 @@ static Cooling_FunStatusTypeDef Run(){
 					printfln("开启液冷控制");
 				}
 			}
-			CoolingWorkStatus++;
+			Cooling_Handle->CoolingWorkStatus++;
 			
 			break;
 		}
@@ -319,8 +338,9 @@ static Cooling_FunStatusTypeDef Run(){
 								Cooling_Handle->CMD_Pack.CoollingTargetTemp);
 				printfln("液冷目标温度被重设:CMD_Pack.CoollingCMD=>%d",
 						Cooling_Handle->CMD_Pack.CoollingTargetTemp);
+				Cooling_Handle->targetTemperature =temp_uint2float(Cooling_Handle->CMD_Pack.CoollingTargetTemp);
 			}
-			CoolingWorkStatus = Cooling_GET_STATE;
+			Cooling_Handle->CoolingWorkStatus = Cooling_GET_STATE;
 			break;
 		}
 	
@@ -363,9 +383,10 @@ static Cooling_FunStatusTypeDef UpdataPack(){
 }
 
 static void initRegister(){
-	Cooling_Handle->targetTemperature = 10.0f;
-	Cooling_Handle->modbusReport.TargetTemperature = Cooling_Handle->targetTemperature*100;
-    Cooling_Handle->CMD_Pack.CoollingTargetTemp = Cooling_Handle->modbusReport.TargetTemperature ; 
+	// Cooling_Handle->targetTemperature = 10.0f;
+	// Cooling_Handle->modbusReport.TargetTemperature = Cooling_Handle->targetTemperature*100;
+    // Cooling_Handle->CMD_Pack.CoollingTargetTemp = Cooling_Handle->modbusReport.TargetTemperature ; 
+	Cooling_Handle->CoolingWorkStatus = Cooling_STOP;
 
 }
 /**
@@ -386,7 +407,6 @@ Cooling_FunStatusTypeDef CoolingCreate( UART_HandleTypeDef *huartcooling)
 	
 	Cooling_Handle->huart = huartcooling;
 	HAL_UART_Receive_IT(Cooling_Handle->huart, (uint8_t *)cooling_aRxBuffer, 1);
-	Cooling_Handle->coolingSYSstatus = Cooling_Inited;
 	initRegister();
 	return Cooling_OK;
 }

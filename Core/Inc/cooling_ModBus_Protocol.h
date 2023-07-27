@@ -127,11 +127,12 @@ typedef struct
     UART_HandleTypeDef *huart;
     Modbus_ChangLiu_CMD_Pack_TypeDef CMD_Pack;
     Cooling_ChangLiu_PSD_TypeDef Cooling_PSD;
+    Cooling_StateTypeDef CoolingWorkStatus;       //工作状态	供液冷控制器流程控制
     float currentTemperature;
     float targetTemperature;
     uint8_t modbus_count;
     // char *info[1000];                       /* 液冷控制器信息描述,1k缓存*/
-    Cooling_StatusTypeDef coolingSYSstatus;
+    
     Cooling_FunStatusTypeDef (* Init)();       /*!< 配置用户通讯接口   */
     Cooling_FunStatusTypeDef (* Run)();        /*!< 启动液冷控制器  建议工作频率20hz   */      
     Cooling_FunStatusTypeDef (* Stop)();       /*!< 停止液冷控制器     */      

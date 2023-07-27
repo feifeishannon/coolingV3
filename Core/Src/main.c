@@ -134,23 +134,22 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 /**
  * @brief 将水冷控制器的数据更新到tms控制器中
- *  当前液冷能提供给tms的只有运行状态、设定温度、当前温度这三部分
+ * 
+ *  当前液冷能提供给tms的只有运行状态、当前温度
  * 
  */
 void coolingData2TMS_Data(){
-  TMS_Handle->modbusReport.TMSRunState = 
-                        (Cooling_Handle->
-                        modbusReport.CoolingRunningState & 0x0080) >> 7;
-  TMS_Handle->modbusReport.OutletTemperature = 
-                        (Cooling_Handle->
-                        modbusReport.WaterTankTemperature / 100 + 50) *10;
-  TMS_Handle->modbusReport.PSD = 
-                        (Cooling_Handle->
-                        modbusReport.CoolingRunningState& 0x0080);
+  TMS_Handle->TMS_PSD.TMSRunState = (Cooling_Handle->Cooling_PSD.CoolingRunState);
+  TMS_Handle->currentTemperature = (Cooling_Handle->currentTemperature);
 	TMS_Handle->modbusDataReloadFlag = 1;//TMS处理数据完成
-
 }
 
+/**
+ * @brief  通过设置液冷CMD_Pack的目标温度，用于和液冷控制器真实温度判断是否一致，不一致则执行设置命令
+ * @note   
+ * @param  temperature: 
+ * @retval None
+ */
 void SetCoollingTemperature(uint16_t temperature){
   Cooling_Handle->CMD_Pack.CoollingTargetTemp = temperature; 
 }
@@ -173,7 +172,6 @@ void TMS_Data2cooling_Data(){
  *        处理TMS发送来的所有指令，根据指令回复相应的数据，并设置水冷的具体控制内容
  *        处理完一次任务后清空控制标志，等待新任务。
  * 
- * @todo: 需处理CMDCodeDef中所有控制量
  */
 void cooling_CMDfun(){
   switch (TMS_Handle->CMDCode){
@@ -181,6 +179,7 @@ void cooling_CMDfun(){
     case CoolingCMDStop:
       printfln("CoolingCMDStop");
       Cooling_Handle->CMD_Pack.CoollingCMD = 0; 
+      Cooling_Handle->CoolingWorkStatus = Cooling_CHECK_RunState; 
       TMS_Handle->CMDCode = CoolingWait;
     break;
 
@@ -188,6 +187,7 @@ void cooling_CMDfun(){
     case CoolingCMDStart:
       printfln("CoolingCMDStart");
       Cooling_Handle->CMD_Pack.CoollingCMD = 1; 
+      Cooling_Handle->CoolingWorkStatus = Cooling_CHECK_RunState; 
 
       TMS_Handle->CMDCode = CoolingWait;
 
@@ -195,14 +195,13 @@ void cooling_CMDfun(){
 
     // 接收到设置温度指令，向水冷发送设置温度指令
     case CoolingSetTemp:
-      //@TODO: 将TMS_Handle的温度转码为Cooling_Handle可用形式并设置
       printfln("CoolingSetTemp");
       SetCoollingTemperature(TMS_Handle->targetTemperature * 100);
+      Cooling_Handle->CoolingWorkStatus = Cooling_SET_TEMP; 
       TMS_Handle->CMDCode = CoolingWait;
 
     break;
 
-    //@todo:将液冷的回包数据上传到TMS端
     // 接收到获取信息指令，将水冷信息回传给TMS
     case CoolingGetData:
       printfln("CoolingGetData");
@@ -245,13 +244,13 @@ void cooling_CMDfun(){
 
     /**
      * @brief  接收设置所有寄存器指令
-     * @todo 接收寄存器时 tms控制器已经解析了数据信息，此处无需再次解析
+     * @todo 液冷状态应该由液冷控制器决定，而不是外部直接设定
      */
     case CoolingSetAll:
       printfln("CoolingSetAll");
       TMS_Data2cooling_Data();  // 根据TMS控制器的数据状态更新液冷控制器的对应寄存器
       TMS_Handle->CMDCode = CoolingWait;
-
+      Cooling_Handle->CoolingWorkStatus = Cooling_GET_STATE; 
     break;
 
 		case CoolingWait:
@@ -286,7 +285,7 @@ int main(void)
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
-
+ 
   /* Configure the system clock */
   SystemClock_Config();
 

@@ -143,32 +143,58 @@ void copyArray(uint8_t* target, uint8_t* source, uint8_t length) {
 }
 
 /**
- * @brief 根据输入数据更新所有输入寄存器
- * 
+ * @brief  将tms的报文温度转为真实温度
+ * @note   
+ * @param  temp: 
+ * @retval 
  */
-static void updata(){
-	
-	TMS_Handle->TMS_CMD_Pack.TMSTargetTemp = TMS_Handle->modbusReport.TMSRunState;
-	TMS_Handle->targetTemperature = 
-		(float)(TMS_Handle->modbusReport.TargetTemperature/10-50);
+static float temp_uint2float(uint16_t temp){
+	return (float)((temp - 500) / 10);
 }
+/**
+ * @brief  将tms的真实温度转为报文温度
+ * @note   
+ * @param  temp: 
+ * @retval 
+ */
+static uint16_t temp_float2uint(float temp){
+	return (uint16_t)(temp * 10  + 500);
+}
+
+/**
+ * @brief  
+ * @note   
+ * @retval None
+ * @todo	数据处理应该在外部，不在这里
+ */
 static void	updataPSD(){
-	uint8_t	index=0;
-	uint8_t	bitindex=0;
 	if(TMS_Handle->modbusDataReloadFlag==0){//未处理好接收数据
 		return;
 	}
-	if(TMS_Handle->modbusReport.PSD & (1 << index++)){//水位报警
+	// if(TMS_Handle->modbusReport.PSD & (1 << index++)){//水位报警
 		
-		TMS_Handle->TMS_PSD.TMSLiquidLevelERR = TMS_Handle->modbusReport.liquidheight;
-		TMS_Handle->TMS_PSD.TMSERRflag |= (1 << bitindex++);
-	}else{
-		TMS_Handle->TMS_PSD.TMSLiquidLevelERR = 0;
-		TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
-	}
-	updata();
+	// 	TMS_Handle->TMS_PSD.TMSLiquidLevelERR = TMS_Handle->modbusReport.liquidheight;
+	// 	TMS_Handle->TMS_PSD.TMSERRflag |= (1 << bitindex++);
+	// }else{
+	// 	TMS_Handle->TMS_PSD.TMSLiquidLevelERR = 0;
+	// 	TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
+	// }
 	TMS_Handle->modbusDataReloadFlag = 0;//处理数据状态清除
 	
+}
+/**
+ * @brief 根据输入数据更新所有输入寄存器和输出寄存器
+ * 
+ */
+static void updata(){
+	TMS_Handle->TMS_CMD_Pack.TMSTargetTemp = 
+		TMS_Handle->modbusReport.TMSRunState;
+	TMS_Handle->targetTemperature = 
+		(float)(TMS_Handle->modbusReport.TargetTemperature/10-50);
+	TMS_Handle->modbusReport.OutletTemperature= 
+		temp_float2uint(TMS_Handle->currentTemperature);
+
+	updataPSD();
 }
 
 static void send_data(uint8_t *buff, uint8_t len)
@@ -241,6 +267,7 @@ static void TMSOperateGetData(){
 }
 static void TMSOperateSetTemp(uint8_t value){
 	TMS_Handle->CMDCode = CoolingSetTemp;
+	//@todo 此处温度转换是否有必要
 	TMS_Handle->targetTemperature = (float)value/10-50;//保存设定温度值
 
 }
@@ -383,7 +410,7 @@ static void RxCplt(void)
  */
 static TMS_FunStatusTypeDef Run(){
 	// 确定收到有效数据后更新TMS状态位
-	updataPSD();
+	updata();
 	TMS_Handle->UpdataPack(); // 更新串口接收来的数据
     
 	return TMS_OK;
@@ -419,9 +446,18 @@ static TMS_FunStatusTypeDef UpdataPack(){
 	return TMS_OK;
 }
 
+/**
+ * @brief  初始化tms寄存器，设置目标温度值10°
+ * 			同时更新回包数据，锁存目标温度
+ * @note   
+ * @retval None
+ */
 static void initRegister(){
 	TMS_Handle->targetTemperature = 10.0f;
-	TMS_Handle->CMDCode = CoolingCMDStart;
+	TMS_Handle->modbusReport.TargetTemperature = 
+		temp_float2uint(TMS_Handle->targetTemperature);
+
+	// TMS_Handle->CMDCode = CoolingCMDStart;
 }
 /**
  * @brief TMS控制器注册函数
