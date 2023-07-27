@@ -102,6 +102,7 @@ typedef struct
     float currentTemperature;
     float targetTemperature;
     uint8_t modbus_count;
+    uint8_t modbusDataReloadFlag;     /* TMS控制器处理数据标志，完成处理后置1，未完成清除*/
     // char *info[1000];                       /* 液冷控制器信息描述,1k缓存*/
     TMS_FunStatusTypeDef (* Init)();       /*!< 配置用户通讯接口   */
     TMS_FunStatusTypeDef (* Run)();        /*!< 启动液冷控制器  建议工作频率20hz   */      

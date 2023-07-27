@@ -14,6 +14,7 @@
 #define USART_REC_LEN 200 
 #define RXBUFFERSIZE 1   
 
+#if 1 //折叠代码
 uint8_t TMSRecvBuf[50] = {0};    //接收BUF
 uint8_t TMSSendBuf[50] = {0};    //发送BUF
 uint8_t TMSDataBuf[50] = {0};    //水冷数据BUF
@@ -51,8 +52,6 @@ uint8_t TMS_modbus_slave_addr = 0xAA; //
 uint8_t TMS_modbus_Tx_buff[100];	  // 发送缓冲区
 
 uint16_t targetTemp = 0;
-
-
 
 uint8_t auchCRCHi[] = {
 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0,
@@ -110,6 +109,8 @@ char auchCRCLo[] = {
 0x44, 0x84, 0x85, 0x45, 0x87, 0x47, 0x46, 0x86, 0x82, 0x42,
 0x43, 0x83, 0x41, 0x81, 0x80, 0x40};
 
+#endif
+
 static uint16_t CRC16(uint8_t *puchMsg, uint16_t usDataLen)
 {
 	uint8_t uchCRCHi = 0xFF;
@@ -141,16 +142,22 @@ void copyArray(uint8_t* target, uint8_t* source, uint8_t length) {
 	
 }
 
-
-static void send_data(uint8_t *buff, uint8_t len)
-{
-	HAL_UART_Transmit_IT(TMS_Handle->huart, (uint8_t *)buff, len); // 发送数据   把buff
-	// while (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_TC) != SET); // 等待发送结束
+/**
+ * @brief 根据输入数据更新所有输入寄存器
+ * 
+ */
+static void updata(){
+	
+	TMS_Handle->TMS_CMD_Pack.TMSTargetTemp = TMS_Handle->modbusReport.TMSRunState;
+	TMS_Handle->targetTemperature = 
+		(float)(TMS_Handle->modbusReport.TargetTemperature/10-50);
 }
-
 static void	updataPSD(){
 	uint8_t	index=0;
 	uint8_t	bitindex=0;
+	if(TMS_Handle->modbusDataReloadFlag==0){//未处理好接收数据
+		return;
+	}
 	if(TMS_Handle->modbusReport.PSD & (1 << index++)){//水位报警
 		
 		TMS_Handle->TMS_PSD.TMSLiquidLevelERR = TMS_Handle->modbusReport.liquidheight;
@@ -159,7 +166,15 @@ static void	updataPSD(){
 		TMS_Handle->TMS_PSD.TMSLiquidLevelERR = 0;
 		TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
 	}
+	updata();
+	TMS_Handle->modbusDataReloadFlag = 0;//处理数据状态清除
 	
+}
+
+static void send_data(uint8_t *buff, uint8_t len)
+{
+	HAL_UART_Transmit_IT(TMS_Handle->huart, (uint8_t *)buff, len); // 发送数据   把buff
+	// while (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_TC) != SET); // 等待发送结束
 }
 
 /**
@@ -192,6 +207,7 @@ static void reportAll(){
 	send_data(TMS_modbus_Tx_buff,41);
 }
 
+#if 1 //折叠系统代码
 /**
  * @brief modbus收到信息后回传接收到的信息
  * 
@@ -229,6 +245,8 @@ static void TMSOperateSetTemp(uint8_t value){
 
 }
 
+#endif
+
 static void modbus_03_Receivefunction(uint8_t lenth)
 {
 	TMSOperateGetData();
@@ -236,7 +254,6 @@ static void modbus_03_Receivefunction(uint8_t lenth)
 
 /**
  * @brief 解析06码控制
- * 
  * 
  */
 static void modbus_06_Receivefunction(uint16_t CMD_register, uint8_t value,uint8_t lenth)
@@ -280,16 +297,6 @@ static void modbus_06_Receivefunction(uint16_t CMD_register, uint8_t value,uint8
 	reportAPK(lenth);
 }
 
-/**
- * @brief 根据输入数据更新所有输入寄存器
- * 
- */
-static void updata(){
-	
-	TMS_Handle->TMS_CMD_Pack.TMSTargetTemp = TMS_Handle->modbusReport.TMSRunState;
-	TMS_Handle->targetTemperature = 
-		(float)(TMS_Handle->modbusReport.TargetTemperature/10-50);
-}
 
 /**
  * @brief 设置所有寄存器内容
@@ -305,14 +312,12 @@ static void modbus_10_Receivefunction(uint8_t lenth)
 	uint16_t value;
 	uint16_t * ptr;
 	
-	for (size_t i = 0; i < 9;i++ )
-	{
-		
+	for (size_t i = 0; i < 9;i++ ){
 		value = (uint16_t)((TMS_USART_RX_BUF[i * 2 + 7] << 8) | TMS_USART_RX_BUF[i * 2 + 7 + 1]);
 		ptr = (uint16_t*)&(TMS_Handle->modbusReport);
 		ptr[i] = value;
 	}
-	updata();
+	
 	reportAPK(lenth);
 
 	TMS_Handle->CMDCode = CoolingSetAll;
@@ -321,7 +326,6 @@ static void modbus_10_Receivefunction(uint8_t lenth)
 /**
  * @brief 
  * 
- * 	
  */
 static void TMSModbus_service(){
 	uint16_t data_CRC_value;   
@@ -335,34 +339,21 @@ static void TMSModbus_service(){
 		data_CRC_value = TMS_USART_RX_BUF[data_len - 2] << 8 | (((uint16_t)TMS_USART_RX_BUF[data_len - 1])); 
 		CMD_register = ((uint16_t)TMS_USART_RX_BUF[2]<<8) | ((uint16_t)TMS_USART_RX_BUF[3]);
 		value = (uint16_t)TMS_USART_RX_BUF[4] << 8 | ((uint16_t)TMS_USART_RX_BUF[5]);
-		if (CRC_check_result == data_CRC_value)
-		{
-			if (TMS_USART_RX_BUF[0] == TMS_modbus_slave_addr)
-			{
-				switch (TMS_USART_RX_BUF[1])
-				{
-					case 03: 
-					{
+		if (CRC_check_result == data_CRC_value){
+			if (TMS_USART_RX_BUF[0] == TMS_modbus_slave_addr){
+				switch (TMS_USART_RX_BUF[1]){
+					case 03:
 						modbus_03_Receivefunction(data_len);
 						break;
-					}
-					case 06: 
-					{
+					case 06:
 						modbus_06_Receivefunction(CMD_register,value,data_len);
 						
 						break;
-					}
-					case 0x10: 
-					{
+					case 0x10:
 						modbus_10_Receivefunction(data_len);
 						
 						break;
-					}
-				}
-			}
-			// 确定收到有效数据后更新TMS状态位
-			updataPSD();
-		}
+					}}}
 		TMS_USART_RX_STA = 0;
 	}
 }
@@ -391,6 +382,8 @@ static void RxCplt(void)
  * @param hTMS 
  */
 static TMS_FunStatusTypeDef Run(){
+	// 确定收到有效数据后更新TMS状态位
+	updataPSD();
 	TMS_Handle->UpdataPack(); // 更新串口接收来的数据
     
 	return TMS_OK;
@@ -410,13 +403,10 @@ static TMS_FunStatusTypeDef Stop(){
 /**
  * @brief TMS控制器初始化函数
  *        
- *
- *  
  */
 static TMS_FunStatusTypeDef Init(){
 	TMS_USART_RX_STA = 0; // 准备接收
     
-
 	return TMS_OK;
 }
 

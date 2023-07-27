@@ -296,6 +296,7 @@ void TIM6_DAC_IRQHandler(void)
     Cooling_Handle->UpdataPack();
     TMS_Handle->Run();
     HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_2);
+    printfln("¿ØÖÆÆ÷µ÷¶È");
     
   }
   /* USER CODE END TIM6_DAC_IRQn 0 */

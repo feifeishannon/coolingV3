@@ -147,6 +147,8 @@ void coolingData2TMS_Data(){
   TMS_Handle->modbusReport.PSD = 
                         (Cooling_Handle->
                         modbusReport.CoolingRunningState& 0x0080);
+	TMS_Handle->modbusDataReloadFlag = 1;//TMS处理数据完成
+
 }
 
 void SetCoollingTemperature(uint16_t temperature){
