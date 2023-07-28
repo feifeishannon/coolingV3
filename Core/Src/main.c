@@ -131,7 +131,25 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   
 }
 
+/**
+ * @brief  通过设置液冷CMD_Pack的目标温度，用于和液冷控制器真实温度判断是否一致，不一致则执行设置命令
+ * @note   
+ * @param  temperature: 
+ * @retval None
+ */
+void SetCoollingTemperature(uint16_t temperature){
+  Cooling_Handle->CMD_Pack.CoollingTargetTemp = temperature; 
+}
 
+/**
+ * @brief 将tms控制器中的数据更新到水冷控制器
+ * 
+ *  将TMS的设定温度同步到液冷中
+ * 
+ */
+void TMS_Data2coolingData(){
+  SetCoollingTemperature(TMS_Handle->targetTemperature * 100);
+}
 /**
  * @brief 将水冷控制器的数据更新到tms控制器中
  * 
@@ -144,15 +162,7 @@ void coolingData2TMS_Data(){
 	TMS_Handle->modbusDataReloadFlag = 1;//TMS处理数据完成
 }
 
-/**
- * @brief  通过设置液冷CMD_Pack的目标温度，用于和液冷控制器真实温度判断是否一致，不一致则执行设置命令
- * @note   
- * @param  temperature: 
- * @retval None
- */
-void SetCoollingTemperature(uint16_t temperature){
-  Cooling_Handle->CMD_Pack.CoollingTargetTemp = temperature; 
-}
+
 
 /**
  * @brief 将tms控制器的数据更新到水冷控制器中
@@ -165,8 +175,7 @@ void TMS_Data2cooling_Data(){
   Cooling_Handle->CMD_Pack.CoollingCMD = TMS_Handle->modbusReport.TMSRunState; // 设置液冷控制器的运行开关
   Cooling_Handle->CMD_Pack.PumpCMD = TMS_Handle->modbusReport.TMSRunState; 
   Cooling_Handle->CMD_Pack.PressCMD = TMS_Handle->modbusReport.TMSRunState;
-  Cooling_Handle->CMD_Pack.CoollingTargetTemp = 
-      (TMS_Handle->modbusReport.TargetTemperature- 500 ) / 10*100; // 设置液冷控制器的运行开关
+  SetCoollingTemperature(TMS_Handle->targetTemperature * 100); // 设置液冷控制器的运行开关
 }
 
 /**
@@ -341,6 +350,7 @@ int main(void)
     if (counter++ % 1000==0){
       cooling_CMDfun();
       coolingData2TMS_Data();
+      TMS_Data2coolingData();
 
     }
 
