@@ -163,6 +163,8 @@ void SetCoollingTemperature(uint16_t temperature){
  */
 void TMS_Data2cooling_Data(){
   Cooling_Handle->CMD_Pack.CoollingCMD = TMS_Handle->modbusReport.TMSRunState; // 设置液冷控制器的运行开关
+  Cooling_Handle->CMD_Pack.PumpCMD = TMS_Handle->modbusReport.TMSRunState; 
+  Cooling_Handle->CMD_Pack.PressCMD = TMS_Handle->modbusReport.TMSRunState;
   Cooling_Handle->CMD_Pack.CoollingTargetTemp = 
       (TMS_Handle->modbusReport.TargetTemperature- 500 ) / 10*100; // 设置液冷控制器的运行开关
 }
@@ -179,6 +181,8 @@ void cooling_CMDfun(){
     case CoolingCMDStop:
       printfln("CoolingCMDStop");
       Cooling_Handle->CMD_Pack.CoollingCMD = 0; 
+      Cooling_Handle->CMD_Pack.PumpCMD = 0; 
+      Cooling_Handle->CMD_Pack.PressCMD = 0; 
       Cooling_Handle->CoolingWorkStatus = Cooling_CHECK_RunState; 
       TMS_Handle->CMDCode = CoolingWait;
     break;
@@ -187,6 +191,8 @@ void cooling_CMDfun(){
     case CoolingCMDStart:
       printfln("CoolingCMDStart");
       Cooling_Handle->CMD_Pack.CoollingCMD = 1; 
+      Cooling_Handle->CMD_Pack.PumpCMD = 1; 
+      Cooling_Handle->CMD_Pack.PressCMD = 1; 
       Cooling_Handle->CoolingWorkStatus = Cooling_CHECK_RunState; 
 
       TMS_Handle->CMDCode = CoolingWait;
@@ -213,7 +219,7 @@ void cooling_CMDfun(){
 		// 接收到停止液泵指令
     case CoolingPumpStop:
       printfln("CoolingPumpStop");
-
+      Cooling_Handle->CMD_Pack.PumpCMD = 0; 
       TMS_Handle->CMDCode = CoolingWait;
 
     break;
@@ -221,6 +227,7 @@ void cooling_CMDfun(){
 		// 接收到启动液泵指令，
     case CoolingPumpStart:
       printfln("CoolingPumpStart");
+      Cooling_Handle->CMD_Pack.PumpCMD = 1; 
 
       TMS_Handle->CMDCode = CoolingWait;
 
@@ -229,6 +236,7 @@ void cooling_CMDfun(){
 		// 接收到停止压缩机指令
     case CoolingCompressorStop:
       printfln("CoolingCompressorStop");
+      Cooling_Handle->CMD_Pack.PressCMD = 0; 
 
       TMS_Handle->CMDCode = CoolingWait;
 
@@ -237,6 +245,7 @@ void cooling_CMDfun(){
 		// 接收到启动压缩机指令
     case CoolingCompressorStart:
       printfln("CoolingCompressorStart");
+      Cooling_Handle->CMD_Pack.PressCMD = 1; 
 
       TMS_Handle->CMDCode = CoolingWait;
 
@@ -249,8 +258,8 @@ void cooling_CMDfun(){
     case CoolingSetAll:
       printfln("CoolingSetAll");
       TMS_Data2cooling_Data();  // 根据TMS控制器的数据状态更新液冷控制器的对应寄存器
-      TMS_Handle->CMDCode = CoolingWait;
       Cooling_Handle->CoolingWorkStatus = Cooling_GET_STATE; 
+      TMS_Handle->CMDCode = CoolingWait;
     break;
 
 		case CoolingWait:

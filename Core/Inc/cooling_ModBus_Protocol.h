@@ -37,7 +37,9 @@ typedef enum
     Cooling_STOP                = 0x00,
     Cooling_GET_STATE           = 0x01,
     Cooling_CHECK_RunState      = 0x02,
-    Cooling_SET_TEMP            = 0x03
+    Cooling_CHECK_PumpState     = 0x03,
+    Cooling_CHECK_CoolingState  = 0x04,
+    Cooling_SET_TEMP            = 0x05
 } Cooling_StateTypeDef;//状态机定义
 
 typedef enum
@@ -47,7 +49,11 @@ typedef enum
     SYSTEM_GET_TEMP         = 0x02,         /*  获取液冷温度*/
     SYSTEM_SET_TEMP_DATA    = 0x03,         /*  设置目标温度*/
     SYSTEM_GET_STATE_DATA   = 0x04,         /*  获取液冷状态*/
-    SYSTEM_GET_ALL_DATA     = 0x05          /*  获取液冷状态*/
+    SYSTEM_GET_ALL_DATA     = 0x05,         /*  获取液冷状态*/
+    SYSTEM_PUMP_ON          = 0x06,         /*  获取液冷状态*/
+    SYSTEM_PUMP_OFF         = 0x07,         /*  获取液冷状态*/
+    SYSTEM_COOLING_ON       = 0x08,         /*  获取液冷状态*/
+    SYSTEM_COOLING_OFF      = 0x09          /*  获取液冷状态*/
 } Cooling_OperateTypeDef;                   //功能码定义
 
 

@@ -190,7 +190,7 @@ static void updata(){
 	TMS_Handle->TMS_CMD_Pack.TMSTargetTemp = 
 		TMS_Handle->modbusReport.TMSRunState;
 	TMS_Handle->targetTemperature = 
-		(float)(TMS_Handle->modbusReport.TargetTemperature/10-50);
+		temp_uint2float(TMS_Handle->modbusReport.TargetTemperature);
 	TMS_Handle->modbusReport.OutletTemperature= 
 		temp_float2uint(TMS_Handle->currentTemperature);
 
@@ -265,10 +265,9 @@ static void TMSOperateCompressorStart(){
 static void TMSOperateGetData(){
 	TMS_Handle->CMDCode = CoolingGetData;
 }
-static void TMSOperateSetTemp(uint8_t value){
+static void TMSOperateSetTemp(uint16_t value){
 	TMS_Handle->CMDCode = CoolingSetTemp;
-	//@todo 此处温度转换是否有必要
-	TMS_Handle->targetTemperature = (float)value/10-50;//保存设定温度值
+	TMS_Handle->modbusReport.TargetTemperature =(value) ;//保存设定温度值
 
 }
 
@@ -283,7 +282,7 @@ static void modbus_03_Receivefunction(uint8_t lenth)
  * @brief 解析06码控制
  * 
  */
-static void modbus_06_Receivefunction(uint16_t CMD_register, uint8_t value,uint8_t lenth)
+static void modbus_06_Receivefunction(uint16_t CMD_register, uint16_t value,uint8_t lenth)
 {
 	switch(CMD_register){
 		// case 0x2031: 

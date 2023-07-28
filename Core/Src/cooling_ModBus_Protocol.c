@@ -48,14 +48,18 @@ uint8_t cooling_aRxBuffer[RXBUFFERSIZE];
 // Modbus_Report_Pack_TypeDef Modbus_Report_Pack = {0};  //水冷实时数据
 Cooling_HandleTypeDef* Cooling_Handle;
 
-uint8_t aucCoolingGetALL[8]			=	{0x01, 0x03, 0x20, 0x00, 0x00, 0x03, 0x0E, 0x0B};	 //查询前三寄存器
-uint8_t aucCoolingGetTemp[8]		=	{0x01, 0x03, 0x20, 0x00, 0x00, 0x01, 0x8F, 0xCA};//查询当前温度
-uint8_t aucCoolingGetState[8]		=	{0x01, 0x03, 0x20, 0x02, 0x00, 0x01, 0x2E, 0x0A};//查询当前状态
-uint8_t aucCoolingOFFCmd[8]			=	{0x01, 0x06, 0x20, 0x31, 0x00, 0x00, 0xD3, 0xC5};//关机指令
-uint8_t aucCoolingONCmd[8]			=	{0x01, 0x06, 0x20, 0x31, 0x00, 0x03, 0x93, 0xC4};//开机指令
-uint8_t aucCoolingTargTempCmd[8]	=	{0x01, 0x06, 0x20, 0x03, 0x03, 0xE8, 0x72, 0xB4};//设置目标温度为10°
-uint8_t aucCooling06Cmd[8]			=	{0};
-uint8_t aucCooling10Cmd[27]			=	{0};
+uint8_t aucCoolingGetALL[8]				=	{0x01, 0x03, 0x20, 0x00, 0x00, 0x04, 0x4F, 0xC9};//查询前三寄存器
+uint8_t aucCoolingGetTemp[8]			=	{0x01, 0x03, 0x20, 0x00, 0x00, 0x01, 0x8F, 0xCA};//查询当前温度
+uint8_t aucCoolingGetState[8]			=	{0x01, 0x03, 0x20, 0x02, 0x00, 0x01, 0x2E, 0x0A};//查询当前状态
+uint8_t aucCoolingOFFCmd[8]				=	{0x01, 0x06, 0x20, 0x31, 0x00, 0x00, 0xD3, 0xC5};//关机指令
+uint8_t aucCoolingONCmd[8]				=	{0x01, 0x06, 0x20, 0x31, 0x00, 0x03, 0x93, 0xC4};//开机指令
+uint8_t aucPumpOFFCmd[8]				=	{0x01, 0x06, 0x20, 0x3C, 0x00, 0x00, 0x42, 0x06};//关水泵指令
+uint8_t aucPumpONCmd[8]					=	{0x01, 0x06, 0x20, 0x3C, 0x00, 0x01, 0x83, 0xC6};//开水泵指令
+uint8_t aucPressOFFCmd[8]				=	{0x01, 0x06, 0x20, 0x3D, 0x00, 0x00, 0x13, 0xC6};//关压缩机指令
+uint8_t aucPressONCmd[8]				=	{0x01, 0x06, 0x20, 0x3D, 0x00, 0x01, 0xD2, 0x06};//开压缩机指令
+uint8_t aucCoolingTargTempCmd[8]		=	{0x01, 0x06, 0x20, 0x03, 0x03, 0xE8, 0x72, 0xB4};//设置目标温度为10°
+uint8_t aucCooling06Cmd[8]				=	{0};
+uint8_t aucCooling10Cmd[27]				=	{0};
 
 uint8_t cooling_modbus_slave_addr = 0x01; // 长流水冷机地址
 uint8_t cooling_modbus_Tx_buff[100];	  // 发送缓冲区
@@ -123,6 +127,28 @@ static void CoolingOperateSystemOFF(){
 
 }
 
+// 启动水泵
+static void CoolingOperatePumpON(){
+	send_8data(aucPumpONCmd);
+}
+
+// 停止水泵
+static void CoolingOperatePumpOFF(){
+	send_8data(aucPumpOFFCmd);
+
+}
+
+// 启动压缩机
+static void CoolingOperateCoolingON(){
+	send_8data(aucPressONCmd);
+}
+
+// 停止压缩机
+static void CoolingOperateCoolingOFF(){
+	send_8data(aucPressOFFCmd);
+
+}
+
 // 获取液冷温度
 static void CoolingOperateGetTemp(){
 	send_8data(aucCoolingGetTemp);
@@ -155,10 +181,26 @@ static void CoolingOperateSetTemp(uint16_t value){
 
 }
 
+/**
+ * @brief  执行液冷控制器下发设置指令操作，带一个寄存器
+ * @note   
+ * @param  operateCMD: 
+ * @param  value: 
+ * @retval None
+ */
+static void CoolingOperateSet(Cooling_OperateTypeDef operateCMD, uint16_t value){
+	switch(operateCMD)
+	{
+		case SYSTEM_SET_TEMP_DATA:
+            CoolingOperateSetTemp(value);
+            break;
+		default:
+			return;
+			
+	}
+}
 
-
-
-static void CoolingOperate(Cooling_OperateTypeDef operateCMD, uint16_t value){
+static void CoolingOperate(Cooling_OperateTypeDef operateCMD){
 	switch(operateCMD)
 	{
         
@@ -170,12 +212,24 @@ static void CoolingOperate(Cooling_OperateTypeDef operateCMD, uint16_t value){
             CoolingOperateSystemOFF();
             break;
 
-		case SYSTEM_GET_TEMP:
-            CoolingOperateGetTemp();
+		case SYSTEM_PUMP_ON:
+			CoolingOperatePumpON();
+			break;
+
+		case SYSTEM_PUMP_OFF:
+            CoolingOperatePumpOFF();
             break;
 
-		case SYSTEM_SET_TEMP_DATA:
-            CoolingOperateSetTemp(value);
+		case SYSTEM_COOLING_ON:
+			CoolingOperateCoolingON();
+			break;
+
+		case SYSTEM_COOLING_OFF:
+            CoolingOperateCoolingOFF();
+            break;
+
+		case SYSTEM_GET_TEMP:
+            CoolingOperateGetTemp();
             break;
 
 		case SYSTEM_GET_STATE_DATA:
@@ -297,7 +351,7 @@ static Cooling_FunStatusTypeDef Run(){
 			break;
 		}
 		case Cooling_GET_STATE:{//读取液冷所有寄存器数值
-			CoolingOperate(SYSTEM_GET_ALL_DATA,NULL);
+			CoolingOperate(SYSTEM_GET_ALL_DATA);
 			printfln("获取液冷所有寄存器数据");
 			Cooling_Handle->CoolingWorkStatus++;
 			break;
@@ -305,27 +359,62 @@ static Cooling_FunStatusTypeDef Run(){
 
 		/**
 		 * @brief 检测液冷的开机状态，如果和当前状态不一致时，执行命令寄存器的状态
-		 * 
+		 * if(Cooling_Handle->Cooling_PSD.CoolingPumpState == 0){
 		 */
 		case Cooling_CHECK_RunState:{//判定水冷工作状态，正常开机继续执行，异常开机返回0步骤
 			if(Cooling_Handle->CMD_Pack.CoollingCMD == 0) {
 				if(Cooling_Handle->Cooling_PSD.CoolingRunState == 1){
-					CoolingOperate(SYSTEM_OFF,NULL);
+					CoolingOperate(SYSTEM_OFF);
 					printfln("关闭液冷控制");
 					Cooling_Handle->CoolingWorkStatus = Cooling_STOP;
 					break;
 				}
 			}else{
 				if(Cooling_Handle->Cooling_PSD.CoolingRunState == 0){
-					CoolingOperate(SYSTEM_ON,NULL);
+					CoolingOperate(SYSTEM_ON);
 					printfln("开启液冷控制");
+
 				}
 			}
+			Cooling_Handle->CoolingWorkStatus++;
+			break;
+		}
+		case Cooling_CHECK_PumpState:{
+			if(Cooling_Handle->CMD_Pack.PumpCMD == 0) {
+				if(Cooling_Handle->Cooling_PSD.CoolingPumpState == 1){
+					CoolingOperate(SYSTEM_PUMP_OFF);
+					printfln("关闭水泵");
+					
+				}
+			}else{
+				if(Cooling_Handle->Cooling_PSD.CoolingPumpState == 0){
+					CoolingOperate(SYSTEM_PUMP_ON);
+					printfln("开启水泵");
+				}
+			}
+			
 			Cooling_Handle->CoolingWorkStatus++;
 			
 			break;
 		}
-
+		case Cooling_CHECK_CoolingState:{
+			if(Cooling_Handle->CMD_Pack.PressCMD == 0) {
+				if(Cooling_Handle->Cooling_PSD.CoolingCoolingState == 1){
+					CoolingOperate(SYSTEM_COOLING_OFF);
+					printfln("关闭压缩机");
+					
+				}
+			}else{
+				if(Cooling_Handle->Cooling_PSD.CoolingCoolingState == 0){
+					CoolingOperate(SYSTEM_COOLING_ON);
+					printfln("开启压缩机");
+				}
+			}
+			
+			Cooling_Handle->CoolingWorkStatus++;
+			
+			break;
+		}
 		/**
 		 * @brief 当控制寄存器的温度和回包中的目标温度不一致
 		 * 	表明液冷的目标温度已被更新，需要重新设置目标温度寄存器
@@ -334,9 +423,14 @@ static Cooling_FunStatusTypeDef Run(){
 		case Cooling_SET_TEMP:{//设置水冷温度
 			if(Cooling_Handle->CMD_Pack.CoollingTargetTemp != 
 				Cooling_Handle->modbusReport.TargetTemperature) {
-				CoolingOperate(SYSTEM_SET_TEMP_DATA,
+				if (Cooling_Handle->CMD_Pack.CoollingTargetTemp<500)
+				{
+					Cooling_Handle->CMD_Pack.CoollingTargetTemp = 500;
+				}
+				
+				CoolingOperateSet(SYSTEM_SET_TEMP_DATA,
 								Cooling_Handle->CMD_Pack.CoollingTargetTemp);
-				printfln("液冷目标温度被重设:CMD_Pack.CoollingCMD=>%d",
+				printfln("液冷目标温度被重设:CMD_Pack.CoollingTargetTemp=>%d",
 						Cooling_Handle->CMD_Pack.CoollingTargetTemp);
 				Cooling_Handle->targetTemperature =temp_uint2float(Cooling_Handle->CMD_Pack.CoollingTargetTemp);
 			}
