@@ -93,7 +93,7 @@ static uint16_t CRC16(unsigned char *data,unsigned char length) {
  * @retval 
  */
 static float temp_uint2float(uint16_t temp){
-	return (float)((temp) / 100);
+	return ((float)(temp) / 100.0f);
 }
 /**
  * @brief  将Cool的真实温度转为报文温度
@@ -247,16 +247,43 @@ static void CoolingOperate(Cooling_OperateTypeDef operateCMD){
 }
 
 
-
 static void updataPSD(Cooling_ChangLiu_PSD_TypeDef* Cooling_PSD, uint16_t CoolingRunningState) {
     Cooling_PSD->CoolingRunState = (CoolingRunningState >> 7) & 0x01;
     Cooling_PSD->CoolingHeatState = (CoolingRunningState >> 6) & 0x01;
     Cooling_PSD->CoolingCoolingState = (CoolingRunningState >> 5) & 0x01;
     Cooling_PSD->CoolingPumpFlowAlarm = (CoolingRunningState >> 4) & 0x01;
     Cooling_PSD->CoolingPumpState = (CoolingRunningState >> 3) & 0x01;
-    Cooling_PSD->CoolingTempAlarm = (CoolingRunningState >> 2) & 0x01;
     Cooling_PSD->CoolingLiquidLevelAlarm = (CoolingRunningState >> 1) & 0x01;
     Cooling_PSD->CoolingPower = CoolingRunningState & 0x01;
+	if(Cooling_Handle->currentTemperature > 42 ){
+		if ((CoolingCount++)>10)
+		{
+			Cooling_PSD->CoolingTempAlarm = 1;
+			CoolingCount=11;
+		}
+	}else{
+		Cooling_PSD->CoolingTempAlarm = 0;
+		CoolingCount = 0;
+	}
+	printfln("Cooling_PSD->CoolingRunState:\t %d\r\n"	
+				"Cooling_PSD->CoolingHeatState:\t %d\r\n"		
+				"Cooling_PSD->CoolingCoolingState:\t %d\r\n"	
+				"Cooling_PSD->CoolingPumpFlowAlarm:\t %d\r\n"	
+				"Cooling_PSD->CoolingTempAlarm:\t %d\r\n"		
+				"Cooling_PSD->CoolingLiquidLevelAlarm:\t %d\r\n"
+				"Cooling_PSD->CoolingPower:\t %d\r\n"
+				"当前温度：\t %f\r\n"
+				"目标温度：\t %f"
+				,Cooling_PSD->CoolingRunState
+				,Cooling_PSD->CoolingHeatState
+				,Cooling_PSD->CoolingCoolingState
+				,Cooling_PSD->CoolingPumpFlowAlarm
+				,Cooling_PSD->CoolingTempAlarm
+				,Cooling_PSD->CoolingLiquidLevelAlarm
+				,Cooling_PSD->CoolingPower
+				,Cooling_Handle->currentTemperature
+				,Cooling_Handle->targetTemperature
+				);
 }
 
 
@@ -273,7 +300,6 @@ static void modbus_03_Receivefunction(uint8_t data_len)
 		
 	}
 	Cooling_Handle->currentTemperature = temp_uint2float(Cooling_Handle->modbusReport.WaterTankTemperature);
-	// printfln("当前温度：%f",Cooling_Handle->currentTemperature);
 	updataPSD(&Cooling_Handle->Cooling_PSD, Cooling_Handle->modbusReport.CoolingRunningState);
 }
 

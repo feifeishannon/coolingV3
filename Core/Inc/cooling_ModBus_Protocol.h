@@ -116,7 +116,7 @@ typedef struct
     uint8_t CoolingPumpFlowAlarm;       // 流量异常     4
     uint8_t CoolingPumpState;           // 泵运行状态   3
     uint8_t CoolingTempAlarm;           // 温度异常     2
-    uint8_t CoolingLiquidLevelAlarm;    // 流速异常     1
+    uint8_t CoolingLiquidLevelAlarm;    // 液位异常     1
     uint8_t CoolingPower;               // 电源         0
 } Cooling_ChangLiu_PSD_TypeDef;
 #pragma pack()

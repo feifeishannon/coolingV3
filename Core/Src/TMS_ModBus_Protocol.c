@@ -144,41 +144,43 @@ void copyArray(uint8_t* target, uint8_t* source, uint8_t length) {
 
 /**
  * @brief  将tms的报文温度转为真实温度
- * @note   
  * @param  temp: 
- * @retval 
  */
 static float temp_uint2float(uint16_t temp){
 	return (float)((temp - 500) / 10);
 }
 /**
  * @brief  将tms的真实温度转为报文温度
- * @note   
  * @param  temp: 
- * @retval 
  */
 static uint16_t temp_float2uint(float temp){
 	return (uint16_t)(temp * 10  + 500);
 }
 
 /**
- * @brief  
+ * @brief  TMS_PSD封包函数
  * @note   
- * @retval None
- * @todo	数据处理应该在外部，不在这里
  */
 static void	updataPSD(){
 	if(TMS_Handle->modbusDataReloadFlag==0){//未处理好接收数据
 		return;
 	}
-	// if(TMS_Handle->modbusReport.PSD & (1 << index++)){//水位报警
-		
-	// 	TMS_Handle->TMS_PSD.TMSLiquidLevelERR = TMS_Handle->modbusReport.liquidheight;
-	// 	TMS_Handle->TMS_PSD.TMSERRflag |= (1 << bitindex++);
-	// }else{
-	// 	TMS_Handle->TMS_PSD.TMSLiquidLevelERR = 0;
-	// 	TMS_Handle->TMS_PSD.TMSERRflag &= ~(1 << bitindex++);
-	// }
+	if( TMS_Handle->TMS_PSD.TMSRunState){
+		TMS_Handle->modbusReport.PSD |= 1 << 7;
+	}else{
+		TMS_Handle->modbusReport.PSD &= ~(1 << 7);
+	}
+	if( TMS_Handle->TMS_PSD.TMSHighTempERR){
+		TMS_Handle->modbusReport.PSD |= 1 << 2;
+	}else{
+		TMS_Handle->modbusReport.PSD &= ~(1 << 2);
+	}
+	if( TMS_Handle->TMS_PSD.TMSLiquidLevelERR){
+		TMS_Handle->modbusReport.PSD |= 1 ;
+	}else{
+		TMS_Handle->modbusReport.PSD &= ~(1);
+	}
+	
 	TMS_Handle->modbusDataReloadFlag = 0;//处理数据状态清除
 	
 }
@@ -200,7 +202,6 @@ static void updata(){
 static void send_data(uint8_t *buff, uint8_t len)
 {
 	HAL_UART_Transmit_IT(TMS_Handle->huart, (uint8_t *)buff, len); // 发送数据   把buff
-	// while (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_TC) != SET); // 等待发送结束
 }
 
 /**

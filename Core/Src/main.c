@@ -158,6 +158,8 @@ void TMS_Data2coolingData(){
  */
 void coolingData2TMS_Data(){
   TMS_Handle->TMS_PSD.TMSRunState = (Cooling_Handle->Cooling_PSD.CoolingRunState);
+  TMS_Handle->TMS_PSD.TMSHighTempERR = (Cooling_Handle->Cooling_PSD.CoolingTempAlarm);
+  TMS_Handle->TMS_PSD.TMSLiquidLevelERR = (Cooling_Handle->Cooling_PSD.CoolingLiquidLevelAlarm);
   TMS_Handle->currentTemperature = (Cooling_Handle->currentTemperature);
 	TMS_Handle->modbusDataReloadFlag = 1;//TMS处理数据完成
 }
@@ -167,8 +169,6 @@ void coolingData2TMS_Data(){
 /**
  * @brief 将tms控制器的数据更新到水冷控制器中
  *  配置液冷控制器的目标温度和运行状态，
- * @issue: 应该将状态配置到输入寄存器中，而不是直接配置modbus回包结构，
- *        之后再由液冷控制器检测输入寄存器的值是否有变动，有变动后再执行下发配置
  * 
  */
 void TMS_Data2cooling_Data(){
@@ -176,6 +176,17 @@ void TMS_Data2cooling_Data(){
   Cooling_Handle->CMD_Pack.PumpCMD = TMS_Handle->modbusReport.TMSRunState; 
   Cooling_Handle->CMD_Pack.PressCMD = TMS_Handle->modbusReport.TMSRunState;
   SetCoollingTemperature(TMS_Handle->targetTemperature * 100); // 设置液冷控制器的运行开关
+  printfln("Cooling_Handle->CMD_Pack.CoollingCMD \t=\t %d\r\n"
+    "Cooling_Handle->CMD_Pack.PumpCMD \t=\t %d\r\n"
+    "Cooling_Handle->CMD_Pack.PressCMD \t=\t %d\r\n"
+    "Cooling_Handle->CMD_Pack.CoollingTargetTemp \t=\t %d\r\n"
+    ,
+    Cooling_Handle->CMD_Pack.CoollingCMD,
+    Cooling_Handle->CMD_Pack.PumpCMD,
+    Cooling_Handle->CMD_Pack.PressCMD,
+    Cooling_Handle->CMD_Pack.CoollingTargetTemp
+    
+  );
 }
 
 /**
