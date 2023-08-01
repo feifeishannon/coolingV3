@@ -314,7 +314,7 @@ int main(void)
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
- 
+
   /* Configure the system clock */
   SystemClock_Config();
 
@@ -975,7 +975,7 @@ static void MX_TIM6_Init(void)
   htim6.Init.Prescaler = 19999;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim6.Init.Period = 10;
-  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
     Error_Handler();

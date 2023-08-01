@@ -412,7 +412,7 @@ static TMS_FunStatusTypeDef Run(){
 	// 确定收到有效数据后更新TMS状态位
 	updata();
 	TMS_Handle->UpdataPack(); // 更新串口接收来的数据
-    
+    HAL_GPIO_WritePin(GPIOE, GPIO_PIN_2, GPIO_PIN_RESET);
 	return TMS_OK;
 }
 
