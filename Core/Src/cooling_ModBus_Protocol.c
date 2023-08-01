@@ -107,7 +107,7 @@ static uint16_t temp_float2uint(float temp){
 
 static void send_data(uint8_t *buff, uint8_t len)
 {
-	HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_2);
+	Cooling_Handle->ledflight=10;
 	HAL_UART_Transmit_IT(Cooling_Handle->huart, (uint8_t *)buff, len); // 发送数据   把buff
 	// while (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_TC) != SET); // 等待发送结束
 }

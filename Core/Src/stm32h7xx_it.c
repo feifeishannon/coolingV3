@@ -196,10 +196,8 @@ void SysTick_Handler(void)
   static uint32_t tick_counter = 0;
   if (tick_counter++ % 1000 == 0 )
   {
-    HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_1);
+    HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_2);
   }
-  if(Cooling_Handle->modbus_count++>10)Cooling_Handle->modbus_count=10;
-  if(TMS_Handle->modbus_count++>10)TMS_Handle->modbus_count=10;
   
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
@@ -299,6 +297,18 @@ void TIM6_DAC_IRQHandler(void)
   }
   if ((eventTimer) % 100 == 0){
     TMS_Handle->Run();
+  }
+  if ((eventTimer) % 1000 == 0){
+    if(Cooling_Handle->modbus_count++>10)Cooling_Handle->modbus_count=10;
+    if(TMS_Handle->modbus_count++>10)TMS_Handle->modbus_count=10;
+  }
+  if ((eventTimer) % 10 == 0){
+    if(Cooling_Handle->ledflight>0){
+      Cooling_Handle->ledflight--;
+      HAL_GPIO_WritePin(GPIOE, GPIO_PIN_1, GPIO_PIN_RESET);
+    }else{
+      HAL_GPIO_WritePin(GPIOE, GPIO_PIN_1, GPIO_PIN_SET);
+    }
   }
 
   /* USER CODE END TIM6_DAC_IRQn 0 */

@@ -137,6 +137,7 @@ typedef struct
     float currentTemperature;
     float targetTemperature;
     uint8_t modbus_count;
+    uint8_t ledflight;
     // char *info[1000];                       /* 液冷控制器信息描述,1k缓存*/
     
     Cooling_FunStatusTypeDef (* Init)();       /*!< 配置用户通讯接口   */
