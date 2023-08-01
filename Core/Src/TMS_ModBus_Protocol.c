@@ -228,9 +228,9 @@ static void reportAll(){
 	}
 	
 	// 发送数据需根据现有内容做crc
-	CRCvlaue = CRC16(TMS_modbus_Tx_buff, 36);
-	TMS_modbus_Tx_buff[39] = (CRCvlaue)&0xFF;
-	TMS_modbus_Tx_buff[40] = (CRCvlaue >> 8) & 0xFF;
+	CRCvlaue = CRC16(TMS_modbus_Tx_buff, 39);
+	TMS_modbus_Tx_buff[40] = (CRCvlaue)&0xFF;
+	TMS_modbus_Tx_buff[39] = (CRCvlaue >> 8) & 0xFF;
 	send_data(TMS_modbus_Tx_buff,41);
 }
 
